@@ -2,17 +2,74 @@
 // Client-side APCA + WCAG 2.x contrast checker with suggestion support.
 
 let APCAcontrast = null;
+let APCA_sRGBtoY = null;
 
 // Try to dynamically import APCA. If it fails, we still run the rest.
 (async function init() {
   try {
     const mod = await import("https://cdn.jsdelivr.net/npm/apca-w3@0.1.9/+esm");
     APCAcontrast = mod.APCAcontrast;
+    // helper to convert sRGB (0-255) to the Y value expected by APCAcontrast
+    APCA_sRGBtoY = mod.sRGBtoY || null;
   } catch (e) {
     console.warn("APCA module could not be loaded. APCA results will be n/a.", e);
   }
   setupContrastTool();
 })();
+
+// Ensure random helpers are available globally for event handlers
+// Simple HSL -> HEX converter (expects h in degrees 0-360, s and l in percent 0-100)
+function hslToHex(h, s, l) {
+  s = s / 100;
+  l = l / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hh = (h % 360) / 60;
+  const x = c * (1 - Math.abs((hh % 2) - 1));
+  let r1 = 0, g1 = 0, b1 = 0;
+  if (0 <= hh && hh < 1) { r1 = c; g1 = x; b1 = 0; }
+  else if (1 <= hh && hh < 2) { r1 = x; g1 = c; b1 = 0; }
+  else if (2 <= hh && hh < 3) { r1 = 0; g1 = c; b1 = x; }
+  else if (3 <= hh && hh < 4) { r1 = 0; g1 = x; b1 = c; }
+  else if (4 <= hh && hh < 5) { r1 = x; g1 = 0; b1 = c; }
+  else { r1 = c; g1 = 0; b1 = x; }
+  const m = l - c / 2;
+  const r = Math.round((r1 + m) * 255);
+  const g = Math.round((g1 + m) * 255);
+  const b = Math.round((b1 + m) * 255);
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function randomHex() {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  const toHex = (n) => n.toString(16).padStart(2, '0').toUpperCase();
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function randomLightHex() {
+  const h = Math.floor(Math.random() * 360);
+  const s = Math.floor(Math.random() * 30) + 50; // 50-80%
+  const l = Math.floor(Math.random() * 15) + 70; // 70-85%
+  return hslToHex(h, s, l);
+}
+
+function randomDarkHex() {
+  const h = Math.floor(Math.random() * 360);
+  const s = Math.floor(Math.random() * 40) + 40; // 40-80%
+  const l = Math.floor(Math.random() * 20) + 8;  // 8-28%
+  return hslToHex(h, s, l);
+}
+
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h |= 0;
+  }
+  return h;
+}
 
 function setupContrastTool() {
   // ---------- DOM references ----------
@@ -103,6 +160,41 @@ function setupContrastTool() {
     return Math.min(max, Math.max(min, value));
   }
 
+  // Compute a nearby focus color meeting 3:1 with foreground and reasonable contrast with background
+  function computeClosestFocus(fgRgb, bgRgb) {
+    const fgHsl = rgbToHsl(fgRgb);
+    const bgHsl = rgbToHsl(bgRgb);
+    const baseCandidates = [ {h: fgHsl.h, s: fgHsl.s}, {h: bgHsl.h, s: bgHsl.s} ];
+    const results = [];
+
+    for (const base of baseCandidates) {
+      for (let d = 0; d <= 100; d += 2) {
+        const l = clamp(fgHsl.l + d / 100, 0.02, 0.98);
+        const candRgb = hslToRgb({ h: base.h, s: base.s, l });
+        const ratioToFg = wcagContrast(candRgb, fgRgb);
+        const ratioToBg = wcagContrast(candRgb, bgRgb);
+        if (ratioToFg >= 3.0 && (ratioToBg >= 3.0 || ratioToBg >= 2.5)) {
+          results.push({ hex: rgbToHex(candRgb), rgb: candRgb, delta: Math.abs(l - fgHsl.l) });
+          break;
+        }
+      }
+      for (let d = 2; d <= 100; d += 2) {
+        const l = clamp(fgHsl.l - d / 100, 0.02, 0.98);
+        const candRgb = hslToRgb({ h: base.h, s: base.s, l });
+        const ratioToFg = wcagContrast(candRgb, fgRgb);
+        const ratioToBg = wcagContrast(candRgb, bgRgb);
+        if (ratioToFg >= 3.0 && (ratioToBg >= 3.0 || ratioToBg >= 2.5)) {
+          results.push({ hex: rgbToHex(candRgb), rgb: candRgb, delta: Math.abs(l - fgHsl.l) });
+          break;
+        }
+      }
+    }
+
+    if (!results.length) return null;
+    results.sort((a, b) => a.delta - b.delta);
+    return results[0];
+  }
+
   function toHex(n) {
     return n.toString(16).padStart(2, "0").toUpperCase();
   }
@@ -146,11 +238,14 @@ function setupContrastTool() {
   }
 
   function apcaLc(textRgb, backgroundRgb) {
-    if (!APCAcontrast) return NaN;
-    return APCAcontrast(
-      [textRgb.r, textRgb.g, textRgb.b],
-      [backgroundRgb.r, backgroundRgb.g, backgroundRgb.b]
-    );
+    if (!APCAcontrast || !APCA_sRGBtoY) return NaN;
+    try {
+      const tY = APCA_sRGBtoY([textRgb.r, textRgb.g, textRgb.b]);
+      const bY = APCA_sRGBtoY([backgroundRgb.r, backgroundRgb.g, backgroundRgb.b]);
+      return APCAcontrast(tY, bY);
+    } catch (e) {
+      return NaN;
+    }
   }
 
   function rgbToHsl({ r, g, b }) {
@@ -360,6 +455,8 @@ for (const c of candidates) {
   if (picked.length >= count) break;
 }
 
+
+
 // Top up if needed
 if (picked.length < count) {
   for (const c of candidates) {
@@ -422,6 +519,8 @@ for (const c of candidates) {
   if (picked.length >= count) break;
 }
 
+  
+
 if (picked.length < count) {
   for (const c of candidates) {
     if (picked.includes(c)) continue;
@@ -444,16 +543,45 @@ return picked.slice(0, count);
     return sign + value.toFixed(1);
   }
 
-  function addResultRow(label, ratio, wcagPass, lc, apcaPass) {
+  // label: string, ratio: number, wcagPass: bool, lc: number, apcaPass: bool
+  // leftColor/rightColor: optional { display: string, hex: string }
+  function addResultRow(label, ratio, wcagPass, lc, apcaPass, leftColor, rightColor) {
     const tr = document.createElement("tr");
 
     const tdLabel = document.createElement("td");
     tdLabel.textContent = label;
+    tdLabel.setAttribute('data-label', 'Pair');
+
+    // color cell shows small swatches and the original CSS string values for quick copy
+    const tdColors = document.createElement('td');
+    tdColors.className = 'result-colors';
+    tdColors.setAttribute('data-label', 'Colors');
+    tdColors.className = 'result-colors';
+    function makeColorBlock(info, title) {
+      const wrap = document.createElement('div');
+      wrap.className = 'result-color-wrap';
+      if (!info) return wrap;
+      const sw = document.createElement('span');
+      sw.className = 'result-swatch';
+      sw.style.backgroundColor = info.hex || info.display;
+      sw.setAttribute('title', (title ? title + ': ' : '') + (info.display || info.hex));
+      const txt = document.createElement('code');
+      txt.className = 'result-color-text';
+      txt.textContent = info.display || info.hex || '';
+      wrap.appendChild(sw);
+      wrap.appendChild(txt);
+      return wrap;
+    }
+    // left (text) and right (background/focus) stacked
+    tdColors.appendChild(makeColorBlock(leftColor, 'Left'));
+    tdColors.appendChild(makeColorBlock(rightColor, 'Right'));
 
     const tdRatio = document.createElement("td");
     tdRatio.textContent = formatRatio(ratio);
+    tdRatio.setAttribute('data-label', 'WCAG ratio');
 
     const tdWcag = document.createElement("td");
+    tdWcag.setAttribute('data-label', 'WCAG status');
     const wcagSpan = document.createElement("span");
     wcagSpan.className =
       "status-badge " + (wcagPass ? "status-pass" : "status-fail");
@@ -462,8 +590,10 @@ return picked.slice(0, count);
 
     const tdLc = document.createElement("td");
     tdLc.textContent = formatLc(lc);
+    tdLc.setAttribute('data-label', 'APCA Lc');
 
     const tdApca = document.createElement("td");
+    tdApca.setAttribute('data-label', 'APCA status');
     const apcaSpan = document.createElement("span");
     apcaSpan.className =
       "status-badge " + (apcaPass ? "status-pass" : "status-fail");
@@ -471,6 +601,7 @@ return picked.slice(0, count);
     tdApca.appendChild(apcaSpan);
 
     tr.appendChild(tdLabel);
+    tr.appendChild(tdColors);
     tr.appendChild(tdRatio);
     tr.appendChild(tdWcag);
     tr.appendChild(tdLc);
@@ -479,11 +610,16 @@ return picked.slice(0, count);
     resultsBody.appendChild(tr);
   }
 
+
   function applyPreviewColors(container, heading, link, button, fgHex, bgHex) {
     if (!container) return;
 
     container.style.color = fgHex;
     container.style.backgroundColor = bgHex;
+    try {
+      container.style.setProperty('--preview-fg', fgHex);
+      container.style.setProperty('--preview-bg', bgHex);
+    } catch (e) {}
 
     if (heading) heading.style.color = fgHex;
     if (link) {
@@ -498,11 +634,407 @@ return picked.slice(0, count);
     }
   }
 
+  // --- Local persistence (localStorage fallback) ---
+  const PALETTE_KEY = 'contrastplus.savedPalette';
+
+  function loadSavedPalette() {
+    try {
+      const raw = localStorage.getItem(PALETTE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn('Failed to read saved palette', e);
+    }
+    return [];
+  }
+
+  function savePaletteToStorage(paletteArray) {
+    try {
+      localStorage.setItem(PALETTE_KEY, JSON.stringify(paletteArray));
+    } catch (e) {
+      console.warn('Failed to save palette', e);
+    }
+  }
+
+  function addSavedColor(value) {
+    const palette = loadSavedPalette();
+    palette.unshift({ id: crypto.randomUUID(), value });
+    savePaletteToStorage(palette.slice(0, 50)); // keep last 50
+    renderSavedPalette();
+  }
+
+  function deleteSavedColor(id) {
+    let palette = loadSavedPalette();
+    palette = palette.filter(p => p.id !== id);
+    savePaletteToStorage(palette);
+    renderSavedPalette();
+  }
+
+  function renderSavedPalette() {
+    const container = document.getElementById('paletteContainer');
+    const count = document.getElementById('paletteCount');
+    container.innerHTML = '';
+    const palette = loadSavedPalette();
+    count.textContent = String(palette.length);
+    if (!palette.length) {
+      const p = document.createElement('p');
+      p.id = 'palettePlaceholder';
+      p.className = 'small italic';
+      p.textContent = 'No saved colors yet. Use the Save buttons near color inputs.';
+      container.appendChild(p);
+      return;
+    }
+
+    palette.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'palette-item';
+      // (no inline icon in the saved-palette list; preview icons render in the Preview section)
+
+      const sw = document.createElement('div');
+      sw.className = 'palette-swatch';
+      sw.style.width = '28px';
+      sw.style.height = '28px';
+      sw.style.borderRadius = '6px';
+      sw.style.backgroundColor = item.value;
+      sw.title = item.value;
+
+      const meta = document.createElement('div');
+      meta.className = 'palette-meta';
+      const val = document.createElement('div');
+      val.className = 'palette-value';
+      val.textContent = item.value;
+
+      const actions = document.createElement('div');
+      actions.className = 'palette-actions';
+      const loadBtn = document.createElement('button');
+      loadBtn.type = 'button';
+      loadBtn.textContent = 'Load as FG';
+      loadBtn.addEventListener('click', () => { fgText.value = item.value; fgPicker.value = parseCssColor(item.value).hex; updateAll(); });
+      const loadBgBtn = document.createElement('button');
+      loadBgBtn.type = 'button';
+      loadBgBtn.textContent = 'Load as BG';
+      loadBgBtn.addEventListener('click', () => { bgText.value = item.value; bgPicker.value = parseCssColor(item.value).hex; updateAll(); });
+      const loadFocusBtn = document.createElement('button');
+      loadFocusBtn.type = 'button';
+      loadFocusBtn.textContent = 'Load as focus';
+      loadFocusBtn.addEventListener('click', () => { thirdText.value = item.value; thirdPicker.value = parseCssColor(item.value).hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); updateAll(); });
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', () => { if (item.id) { deleteSavedColor(item.id); } renderSavedPalette(); updateBarChart(); });
+
+      actions.appendChild(loadBtn);
+      actions.appendChild(loadBgBtn);
+      actions.appendChild(loadFocusBtn);
+      actions.appendChild(delBtn);
+
+      meta.appendChild(val);
+
+      row.appendChild(sw);
+      row.appendChild(meta);
+      row.appendChild(actions);
+      container.appendChild(row);
+    });
+
+    // Render preview icons into both preview panels
+    try {
+      const baseIcons = document.getElementById('previewSavedIconsBase');
+      const thirdIcons = document.getElementById('previewSavedIconsThird');
+      if (baseIcons) baseIcons.innerHTML = '';
+      if (thirdIcons) thirdIcons.innerHTML = '';
+      palette.forEach((item) => {
+        const makeBig = (containerEl) => {
+          const link = document.createElement('a');
+          link.href = '#';
+          link.className = 'saved-icon-link svg-link';
+          link.title = item.value + ' — click: FG, shift+click: BG, alt+click: Focus';
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const val = item.value;
+            try { updateSVG(val); } catch (err) {}
+            if (e.shiftKey) {
+              bgText.value = val; bgPicker.value = parseCssColor(val).hex; updateAll();
+            } else if (e.altKey) {
+              thirdText.value = val; thirdPicker.value = parseCssColor(val).hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); updateAll();
+            } else {
+              fgText.value = val; fgPicker.value = parseCssColor(val).hex; updateAll();
+            }
+          });
+          const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          svgEl.setAttribute('viewBox', '0 0 24 24');
+          svgEl.setAttribute('width', '56');
+          svgEl.setAttribute('height', '56');
+          svgEl.setAttribute('aria-hidden', 'true');
+          const pick = SVG_PATHS[Math.abs(hashCode(item.value)) % SVG_PATHS.length] || SVG_PATHS[0];
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', pick.path);
+          path.setAttribute('fill', item.value);
+          svgEl.appendChild(path);
+          link.appendChild(svgEl);
+          containerEl.appendChild(link);
+        };
+        if (baseIcons) makeBig(baseIcons);
+        if (thirdIcons) makeBig(thirdIcons);
+      });
+    } catch (e) {
+      // non-fatal
+    }
+  }
+
+  // --- Harmony generator (no LLM) ---
+  function generateHarmony(fgRgb) {
+    // Create 5 colors rotating hue and varying lightness
+    const hsl = rgbToHsl(fgRgb);
+    const baseH = hsl.h;
+    const baseS = Math.max(0.25, hsl.s);
+    const baseL = hsl.l;
+    const palette = [];
+    const offsets = [0, 0.08, -0.08, 0.16, -0.16];
+    const lightness = [baseL, clamp(baseL + 0.12, 0.05, 0.95), clamp(baseL - 0.12, 0.05, 0.95), clamp(baseL + 0.22, 0.05, 0.95), clamp(baseL - 0.22, 0.05, 0.95)];
+    for (let i = 0; i < 5; i++) {
+      const h = ((baseH + offsets[i]) % 1 + 1) % 1;
+      const s = clamp(baseS * (1 - i * 0.05), 0.15, 1);
+      const l = lightness[i];
+      const rgb = hslToRgb({ h, s, l });
+      palette.push({ hex: rgbToHex(rgb), name: `Harmonized ${i + 1}` });
+    }
+    return palette;
+  }
+
+  function renderHarmonyOutput(palette) {
+    const out = document.getElementById('harmonyOutput');
+    out.innerHTML = '';
+    palette.forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'harmony-swatch';
+      const box = document.createElement('div');
+      box.className = 'harmony-box';
+      box.style.backgroundColor = c.hex;
+      box.title = `${c.name} — ${c.hex}`;
+      // clicking the swatch loads to foreground; small controls allow load to BG
+      box.addEventListener('click', () => {
+        fgText.value = c.hex;
+        fgPicker.value = c.hex;
+        updateAll();
+      });
+      const label = document.createElement('div');
+      label.className = 'harmony-label';
+      label.textContent = `${c.name} · ${c.hex}`;
+      const controls = document.createElement('div');
+      controls.className = 'harmony-controls-inline';
+      const loadFg = document.createElement('button');
+      loadFg.type = 'button';
+      loadFg.textContent = 'Use FG';
+      loadFg.addEventListener('click', () => {
+        fgText.value = c.hex;
+        fgPicker.value = c.hex;
+        updateAll();
+      });
+      const loadBg = document.createElement('button');
+      loadBg.type = 'button';
+      loadBg.textContent = 'Use BG';
+      loadBg.addEventListener('click', () => {
+        bgText.value = c.hex;
+        bgPicker.value = c.hex;
+        updateAll();
+      });
+      controls.appendChild(loadFg);
+      controls.appendChild(loadBg);
+      card.appendChild(box);
+      card.appendChild(label);
+      card.appendChild(controls);
+      out.appendChild(card);
+    });
+  }
+
+  // --- Small dynamic visuals: bar chart + random SVG ---
+  function updateBarChart(colors) {
+    // Build entries once and render into both containers
+    const saved = loadSavedPalette();
+    const fgHex = (colors && colors[0]) || null;
+    const bgHex = (colors && colors[1]) || null;
+    const focusHex = (colors && colors[2]) || null;
+    const entries = [];
+    if (fgHex) entries.push({ label: 'Foreground', color: fgHex });
+    if (focusHex) entries.push({ label: 'Focus', color: focusHex });
+    // add saved colors (skip any that match BG)
+    saved.forEach(s => {
+      const val = String(s.value || '').toLowerCase();
+      if (bgHex && val === String(bgHex).toLowerCase()) return;
+      if (!entries.some(e => e.color.toLowerCase() === val)) {
+        entries.push({ label: s.label, color: s.value });
+      }
+    });
+
+    function renderBars(container, highlightFocus) {
+      if (!container) return;
+      container.innerHTML = '';
+      // deterministic heights based on index so both charts align
+      const baseCount = entries.length || 1;
+      entries.forEach((entry, i) => {
+        // produce evenly spaced heights between 48% and 92%
+        const min = 48, max = 92;
+        const value = Math.round(min + ((max - min) * (i / Math.max(1, baseCount - 1))));
+        const bar = document.createElement('div');
+        bar.className = 'bar-chart-bar';
+        bar.tabIndex = 0;
+        bar.setAttribute('role', 'img');
+        bar.setAttribute('aria-label', `${entry.label} color ${entry.color}`);
+        // determine display color; if this is the focus entry and a focus color was passed, use it
+        const isFocusEntry = entry.label && String(entry.label).toLowerCase().includes('focus');
+        const displayColor = (isFocusEntry && focusHex) ? focusHex : entry.color;
+        bar.dataset.color = displayColor;
+        bar.dataset.label = entry.label;
+        bar.style.height = `${value}%`;
+        bar.style.backgroundColor = displayColor;
+
+        const pct = document.createElement('div');
+        pct.className = 'bar-chart-label';
+        pct.textContent = entry.label;
+        bar.appendChild(pct);
+
+        // add hidden code box to show on hover/focus
+        const code = document.createElement('div');
+        code.className = 'bar-code';
+        const codeId = `bar-code-${i}-${Math.abs(hashCode(entry.color))}`;
+        code.id = codeId;
+        code.textContent = displayColor;
+        bar.appendChild(code);
+        bar.setAttribute('aria-describedby', codeId);
+
+        bar.addEventListener('mouseenter', () => { bar.classList.add('bar-hover'); bar.title = `${entry.label} ${entry.color}`; });
+        bar.addEventListener('mouseleave', () => bar.classList.remove('bar-hover'));
+        bar.addEventListener('focus', () => bar.classList.add('bar-hover'));
+        bar.addEventListener('blur', () => bar.classList.remove('bar-hover'));
+
+        bar.addEventListener('click', (e) => {
+          if (e.shiftKey) {
+            bgText.value = entry.color; bgPicker.value = parseCssColor(entry.color).hex;
+          } else if (e.altKey) {
+            thirdText.value = entry.color; thirdPicker.value = parseCssColor(entry.color).hex; enableThird.checked = true; document.getElementById('thirdContainer').classList.remove('hidden');
+          } else {
+            fgText.value = entry.color; fgPicker.value = parseCssColor(entry.color).hex;
+          }
+          updateAll();
+        });
+
+        if (highlightFocus && entry.label.toLowerCase().includes('focus')) {
+          bar.classList.add('bar-focus-highlight');
+        }
+
+        container.appendChild(bar);
+      });
+    }
+
+    renderBars(document.getElementById('barChartContainer'), false);
+    renderBars(document.getElementById('barChartContainerThird'), true);
+  }
+
+  const SVG_PATHS = [
+    { id: 'sun', name: 'Sun', path: 'M12 2a1 1 0 011 1v2a1 1 0 11-2 0V3a1 1 0 011-1zm0 17a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zm6.36-12.72a1 1 0 01.707-.293h.001a1 1 0 01.707 1.707l-1.414 1.414a1 1 0 01-1.414-1.414l1.414-1.414zM4.93 19.071a1 1 0 01-.707.293h-.001a1 1 0 01-.707-1.707l1.414-1.414a1 1 0 011.414 1.414l-1.414 1.414zM22 12a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zm-19 0a1 1 0 011-1h2a1 1 0 110 2H3a1 1 0 01-1-1zm16.485-6.636a1 1 0 01-1.414 0l-1.414-1.414a1 1 0 011.414-1.414l1.414 1.414a1 1 0 010 1.414zM4.93 4.93a1 1 0 011.414 0l1.414 1.414a1 1 0 01-1.414 1.414L4.93 6.344a1 1 0 010-1.414zM12 15a3 3 0 100-6 3 3 0 000 6z' },
+    { id: 'star', name: 'Star', path: 'M12 2l2.4 7.2h7.6l-6.1 4.5 2.3 7.2L12 17.5l-6.2 4.4 2.3-7.2-6.1-4.5h7.6z' },
+    { id: 'heart', name: 'Heart', path: 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' },
+    { id: 'plus', name: 'Plus', path: 'M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z' },
+    { id: 'circle', name: 'Circle', path: 'M12 2a10 10 0 100 20 10 10 0 000-20z' },
+    { id: 'triangle', name: 'Triangle', path: 'M12 4l8 14H4z' },
+    { id: 'w3c', name: 'W3C', path: 'M3 3h18v3H3z M3 8h18v13H3z' },
+    { id: 'access', name: 'Accessibility', path: 'M12 2a3 3 0 100 6 3 3 0 000-6zm-1 9h2l2 7h-2l-1-4-1 4H9l2-7z' }
+  ];
+
+  function updateSVG(color) {
+    const container = document.getElementById('svgContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const iconFiles = ['heart.svg','plus.svg','circle.svg','triangle.svg','w3c.svg','accessibility.svg'];
+    const pickFile = iconFiles[Math.floor(Math.random() * iconFiles.length)];
+    const url = `icons/${pickFile}`;
+
+    // Try to fetch and inline the SVG (so we can set fill). If that fails, fallback to inline path.
+    fetch(url).then(r => {
+      if (!r.ok) throw new Error('fetch failed');
+      return r.text();
+    }).then(text => {
+      // parse SVG text and inject color
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'image/svg+xml');
+      const svg = doc.querySelector('svg');
+      if (!svg) throw new Error('invalid svg');
+      // remove width/height so it scales
+      svg.removeAttribute('width');
+      svg.removeAttribute('height');
+      // set viewBox if missing
+      if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', '0 0 24 24');
+      // set fill on paths/shape elements
+      Array.from(svg.querySelectorAll('path, circle, rect, polygon')).forEach(el => el.setAttribute('fill', color));
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', pickFile.replace('.svg',''));
+      container.appendChild(document.importNode(svg, true));
+      container.title = pickFile.replace('.svg','') + ' — ' + color;
+    }).catch(() => {
+      const pick = SVG_PATHS[Math.floor(Math.random() * SVG_PATHS.length)];
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', pick.path);
+      p.setAttribute('fill', color);
+      svg.appendChild(p);
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', pick.name ? pick.name + ' icon' : 'icon');
+      container.appendChild(svg);
+      container.title = (pick.name ? pick.name + ' — ' : '') + color;
+    });
+
+    // clicking svg link applies color as focus (handler uses event delegation via link)
+    const link = document.getElementById('svgContainerLink');
+    if (link) {
+      link.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const thirdEnabled = document.getElementById('enableThird');
+        if (thirdEnabled && !thirdEnabled.checked) {
+          thirdEnabled.checked = true;
+          document.getElementById('thirdContainer').classList.remove('hidden');
+        }
+        const hex = String(color || '#000');
+        document.getElementById('thirdText').value = hex;
+        document.getElementById('thirdPicker').value = parseCssColor(hex).hex;
+        updateAll();
+      });
+    }
+  }
+  
+  
+  function updateSVGThird(color) {
+    const container = document.getElementById('svgContainerThird');
+    if (!container) return;
+    container.innerHTML = '';
+    const path = SVG_PATHS[Math.floor(Math.random() * SVG_PATHS.length)];
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('fill', color);
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', path.path);
+    svg.appendChild(p);
+    container.appendChild(svg);
+  }
+
   function applyFocusPreviewColors(container, heading, link, button, fgHex, bgHex, thirdHex) {
     if (!container) return;
 
     container.style.backgroundColor = bgHex;
     container.style.color = fgHex;
+    try {
+      container.style.setProperty('--preview-fg', fgHex);
+      container.style.setProperty('--preview-bg', bgHex);
+      container.style.setProperty('--preview-focus', thirdHex);
+    } catch (e) {}
 
     if (heading) heading.style.color = fgHex;
 
@@ -564,8 +1096,12 @@ return picked.slice(0, count);
     if (thirdEnabled && third) {
       previewThirdCard.classList.remove("hidden");
       applyFocusPreviewColors(previewThird, demoHeadingThird, demoLinkThird, demoButtonThird, fg.hex, bg.hex, third.hex);
+      // apply global focus color variable
+      try { document.documentElement.style.setProperty('--focus-color', third.hex); } catch (e) {}
     } else {
       previewThirdCard.classList.add("hidden");
+      // reset to default focus color when not enabled
+      try { document.documentElement.style.setProperty('--focus-color', ''); } catch (e) {}
     }
 
     let liveSummary = [];
@@ -574,7 +1110,8 @@ return picked.slice(0, count);
     const baseLc = apcaLc(fg, bg);
     const baseWcagPass = baseRatio >= wcagThreshold;
     const baseApcaPass = !Number.isNaN(baseLc) ? Math.abs(baseLc) >= apcaThreshold : true;
-    addResultRow("Foreground and background", baseRatio, baseWcagPass, baseLc, baseApcaPass);
+    addResultRow("Foreground and background", baseRatio, baseWcagPass, baseLc, baseApcaPass,
+      { display: fgText.value || fg.hex, hex: fg.hex }, { display: bgText.value || bg.hex, hex: bg.hex });
 
     liveSummary.push(
       `Foreground and background: WCAG ratio ${formatRatio(baseRatio)} ` +
@@ -595,12 +1132,14 @@ return picked.slice(0, count);
       const thirdLcBg = apcaLc(third, bg);
       thirdWcagPassBg = thirdRatioBg >= wcagThreshold;
       thirdApcaPassBg = !Number.isNaN(thirdLcBg) ? Math.abs(thirdLcBg) >= apcaThreshold : true;
-      addResultRow("Third and background", thirdRatioBg, thirdWcagPassBg, thirdLcBg, thirdApcaPassBg);
+      addResultRow("Focus and background", thirdRatioBg, thirdWcagPassBg, thirdLcBg, thirdApcaPassBg,
+        { display: thirdText.value || third.hex, hex: third.hex }, { display: bgText.value || bg.hex, hex: bg.hex });
 
       fgThirdRatio = wcagContrast(fg, third);
       focusPass = fgThirdRatio >= 3.0;
       fgThirdLc = apcaLc(fg, third);
-      addResultRow("Foreground and third (focus delta)", fgThirdRatio, focusPass, fgThirdLc, true);
+      addResultRow("Foreground and focus (focus delta)", fgThirdRatio, focusPass, fgThirdLc, true,
+        { display: fgText.value || fg.hex, hex: fg.hex }, { display: thirdText.value || third.hex, hex: third.hex });
 
       focusSummary.classList.remove("hidden");
       if (focusPass) {
@@ -694,38 +1233,35 @@ return picked.slice(0, count);
           parts.push("No nearby foreground colors found that satisfy thresholds by adjusting lightness only.");
         }
       } else {
+        fgPalette.forEach(sug => {
+          const swatch = document.createElement("div");
+          swatch.className = "swatch";
 
-            const swatch = document.createElement("div");
-            swatch.className = "swatch";
+          const colorBox = document.createElement("div");
+          colorBox.className = "swatch-color";
+          colorBox.style.backgroundColor = sug.hex;
 
-            const colorBox = document.createElement("div");
-            colorBox.className = "swatch-color";
-            colorBox.style.backgroundColor = sug.hex;
+          const label = document.createElement("div");
+          label.className = "swatch-label";
+          label.textContent = `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
 
-            const label = document.createElement("div");
-            label.className = "swatch-label";
-            label.textContent =
-              `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
-
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.textContent = "Use as foreground";
-            btn.addEventListener("click", () => {
-              fgText.value = sug.hex;
-              fgPicker.value = sug.hex;
-              updateAll();
-            });
-
-            swatch.appendChild(colorBox);
-            swatch.appendChild(label);
-            swatch.appendChild(btn);
-            fgSuggestions.appendChild(swatch);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "Use as foreground";
+          btn.addEventListener("click", () => {
+            fgText.value = sug.hex;
+            fgPicker.value = sug.hex;
+            updateAll();
           });
 
-          parts.push(`Suggested ${fgPalette.length} foreground alternatives that stay close in hue and saturation and near the chosen thresholds.`);
-        } else {
-          parts.push("No nearby foreground colors found that satisfy thresholds by adjusting lightness only.");
-        }
+          swatch.appendChild(colorBox);
+          swatch.appendChild(label);
+          swatch.appendChild(btn);
+          fgSuggestions.appendChild(swatch);
+        });
+
+        parts.push(`Suggested ${fgPalette.length} foreground alternatives that stay close in hue and saturation and near the chosen thresholds.`);
+      }
 
 
         if (!bgPalette.length) {
@@ -759,8 +1295,7 @@ return picked.slice(0, count);
 
               const label = document.createElement("div");
               label.className = "swatch-label";
-              label.textContent =
-                `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
+              label.textContent = `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
 
               const btn = document.createElement("button");
               btn.type = "button";
@@ -782,7 +1317,7 @@ return picked.slice(0, count);
             parts.push("No nearby background colors found that satisfy thresholds by adjusting lightness, saturation, and hue within a narrow range.");
           }
         } else {
-
+          bgPalette.forEach(sug => {
             const swatch = document.createElement("div");
             swatch.className = "swatch";
 
@@ -792,8 +1327,7 @@ return picked.slice(0, count);
 
             const label = document.createElement("div");
             label.className = "swatch-label";
-            label.textContent =
-              `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
+            label.textContent = `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
 
             const btn = document.createElement("button");
             btn.type = "button";
@@ -811,8 +1345,6 @@ return picked.slice(0, count);
           });
 
           parts.push(`Suggested ${bgPalette.length} background alternatives that stay visually close while aligning better with WCAG and APCA thresholds.`);
-        } else {
-          parts.push("No nearby background colors found that satisfy thresholds by adjusting lightness, saturation, and hue within a narrow range.");
         }
       }
 
@@ -861,13 +1393,68 @@ return picked.slice(0, count);
         } else {
           parts.push("No nearby focus colors found that satisfy both thresholds and the 3 to 1 focus requirement by adjusting lightness only.");
         }
+        // If focus still fails, suggest a computed focus color
+        if (!thirdPalette.length || !focusPass) {
+          const focusSuggestion = computeClosestFocus(fg, bg);
+          if (focusSuggestion) {
+            const swatch = document.createElement('div');
+            swatch.className = 'swatch';
+            const colorBox = document.createElement('div');
+            colorBox.className = 'swatch-color';
+            colorBox.style.backgroundColor = focusSuggestion.hex;
+            const label = document.createElement('div');
+            label.className = 'swatch-label';
+            label.textContent = `${focusSuggestion.hex} · Suggested focus color (minimal change)`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Use as focus color';
+            btn.addEventListener('click', () => {
+              thirdText.value = focusSuggestion.hex;
+              thirdPicker.value = focusSuggestion.hex;
+              enableThird.checked = true;
+              thirdContainer.classList.remove('hidden');
+              updateAll();
+            });
+            swatch.appendChild(colorBox);
+            swatch.appendChild(label);
+            swatch.appendChild(btn);
+            thirdSuggestions.appendChild(swatch);
+            parts.push('Suggested a nearby focus color optimized for the 3:1 focus requirement.');
+          }
+        }
       }
 
       suggestionStatus.textContent = parts.join(" ");
-      if (parts.length) {
+      if (!parts.length) {
+        suggestSection.classList.add("hidden");
+      } else {
         liveSummary.push(suggestionStatus.textContent);
       }
     }
+
+    // Update visuals
+    try {
+      const vizColors = [fg.hex, bg.hex];
+      // always render unified bar charts; provide focus color when enabled
+      if (thirdEnabled && third) {
+        updateBarChart([fg.hex, bg.hex, third.hex]);
+        updateSVG(fg.hex);
+        updateSVGThird(third.hex);
+      } else {
+        updateBarChart([fg.hex, bg.hex]);
+        updateSVG(fg.hex);
+        // clear third visuals
+        const c3 = document.getElementById('barChartContainerThird');
+        if (c3) c3.innerHTML = '';
+        const s3 = document.getElementById('svgContainerThird');
+        if (s3) s3.innerHTML = '';
+      }
+    } catch (e) {
+      // non-fatal
+    }
+
+    // render saved palette
+    renderSavedPalette();
 
     liveRegion.textContent = liveSummary.join(" ");
   }
@@ -876,6 +1463,19 @@ return picked.slice(0, count);
 
   function syncTextFromPicker(picker, textInput) {
     textInput.value = picker.value;
+  }
+
+  function nudgeLightness(hex, deltaPercent) {
+    try {
+      const rgb = parseCssColor(hex);
+      const hsl = rgbToHsl(rgb);
+      let l = hsl.l * 100;
+      l = clamp(l + deltaPercent, 0, 100);
+      const newHex = hslToHex(hsl.h * 360, hsl.s * 100, l);
+      return newHex;
+    } catch (e) {
+      return hex;
+    }
   }
 
   function syncPickerFromText(textInput, picker) {
@@ -932,9 +1532,42 @@ return picked.slice(0, count);
     btn.addEventListener("click", () => {
       const mode = btn.dataset.sim || "normal";
       page.dataset.sim = mode;
-      simToggles.forEach(b => b.classList.remove("sim-toggle-active"));
+      simToggles.forEach(b => {
+        b.classList.remove("sim-toggle-active");
+        b.setAttribute('aria-pressed', 'false');
+        // swap to secondary style
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-secondary');
+      });
       btn.classList.add("sim-toggle-active");
+      btn.setAttribute('aria-pressed', 'true');
+      btn.classList.remove('btn-secondary');
+      btn.classList.add('btn-primary');
       liveRegion.textContent = `Preview simulation set to ${mode}.`;
+    });
+  });
+
+  // Toggle preview buttons behavior (demo toggles).
+  // Attach explicit handlers to each .btn-toggle so clicks and keyboard
+  // activation reliably toggle `aria-pressed` and a visual class.
+  const previewToggles = Array.from(document.querySelectorAll('.btn-toggle'));
+  previewToggles.forEach(btn => {
+    // Ensure initial state
+    if (!btn.hasAttribute('aria-pressed')) btn.setAttribute('aria-pressed', 'false');
+    btn.classList.toggle('btn-toggle-active', btn.getAttribute('aria-pressed') === 'true');
+
+    btn.addEventListener('click', (e) => {
+      const pressed = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+      btn.classList.toggle('btn-toggle-active', !pressed);
+    });
+
+    // Support keyboard activation (Space or Enter)
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
+        e.preventDefault();
+        btn.click();
+      }
     });
   });
 
@@ -946,8 +1579,185 @@ return picked.slice(0, count);
     });
   });
 
+  // Wire small save buttons (if present)
+  const saveFgBtn = document.getElementById('saveFg');
+  const saveBgBtn = document.getElementById('saveBg');
+  const saveThirdBtn = document.getElementById('saveThird');
+  const harmonyButton = document.getElementById('harmonyButton');
+
+  if (saveFgBtn) saveFgBtn.addEventListener('click', () => addSavedColor(fgText.value.trim() || fgPicker.value));
+  if (saveBgBtn) saveBgBtn.addEventListener('click', () => addSavedColor(bgText.value.trim() || bgPicker.value));
+  if (saveThirdBtn) saveThirdBtn.addEventListener('click', () => addSavedColor(thirdText.value.trim() || thirdPicker.value));
+  const findBestFocusBtn = document.getElementById('findBestFocus');
+  let focusSuggestionAttempt = 0;
+  let _lastFgForSuggestion = null;
+  let _lastBgForSuggestion = null;
+  if (findBestFocusBtn) findBestFocusBtn.addEventListener('click', () => {
+    try {
+      const fg = parseCssColor(fgText.value);
+      const bg = parseCssColor(bgText.value);
+      // Reset attempts if FG/BG changed
+      const currentFg = fgText.value || fg.hex;
+      const currentBg = bgText.value || bg.hex;
+      if (_lastFgForSuggestion !== currentFg || _lastBgForSuggestion !== currentBg) {
+        focusSuggestionAttempt = 0;
+        _lastFgForSuggestion = currentFg;
+        _lastBgForSuggestion = currentBg;
+      }
+
+      // Try to find multiple candidate focus colors
+      const wcagThreshold = Number(wcagThresholdSelect.value) || 3.0;
+      const apcaThreshold = Number(apcaThresholdSelect.value) || 60;
+
+      // Use existing algorithm to search around FG and BG hues
+      const candidates = [];
+      try {
+        const fpal = findFocusPalette(fg, bg, wcagThreshold, apcaThreshold, 8, candidateRgb => wcagContrast(candidateRgb, fg) >= 3.0);
+        fpal.forEach(c => candidates.push({ hex: c.hex, score: c.score, ratio: c.ratio, lc: c.lc }));
+      } catch (e) {}
+
+      // If none found, try computeClosestFocus for a fallback
+      if (!candidates.length) {
+        const best = computeClosestFocus(fg, bg);
+        if (best && best.hex) candidates.push({ hex: best.hex, score: 0, ratio: wcagContrast(parseCssColor(best.hex), bg), lc: apcaLc(parseCssColor(best.hex), bg) });
+      }
+
+      // Score candidates with APCA-aware metric (prefer small deviation from 3:1 and APCA closeness)
+      const scored = candidates.map(c => {
+        let wcagDiff = Math.abs((c.ratio || 0) - 3.0);
+        let apcaDiff = Number.isNaN(c.lc) ? 0 : Math.abs(Math.abs(c.lc) - apcaThreshold);
+        return Object.assign({}, c, { combined: wcagDiff + apcaDiff * 0.02 });
+      });
+
+      scored.sort((a, b) => a.combined - b.combined);
+
+      const container = document.getElementById('focusCandidates');
+      container.innerHTML = '';
+      if (!scored.length) {
+        container.textContent = 'No focus candidates found.';
+        return;
+      }
+
+      // Show only one suggestion and cycle through candidates on repeated clicks
+      const selectedIndex = focusSuggestionAttempt % Math.max(1, scored.length);
+      const selected = scored[selectedIndex];
+      focusSuggestionAttempt += 1;
+      if (selected) {
+        // apply it immediately
+        thirdText.value = selected.hex;
+        thirdPicker.value = parseCssColor(selected.hex).hex;
+        enableThird.checked = true;
+        thirdContainer.classList.remove('hidden');
+        updateAll();
+
+        // show a single confirmation card
+        const c = selected;
+        const card = document.createElement('div');
+        card.className = 'focus-candidate';
+        const sw = document.createElement('span');
+        sw.className = 'result-swatch';
+        sw.style.backgroundColor = c.hex;
+        const meta = document.createElement('div');
+        meta.className = 'focus-candidate-meta';
+        const title = document.createElement('div');
+        title.textContent = `${c.hex} · ${formatRatio(c.ratio || 0)} · APCA ${formatLc(c.lc)}`;
+        const note = document.createElement('div');
+        note.className = 'small muted';
+        note.textContent = 'Applied — click Suggestion again for a different option.';
+        meta.appendChild(title);
+        meta.appendChild(note);
+        card.appendChild(sw);
+        card.appendChild(meta);
+        container.appendChild(card);
+      } else {
+        container.textContent = 'No focus candidates found.';
+      }
+
+    } catch (e) {
+      liveRegion.textContent = 'Could not compute focus color: invalid FG/BG.';
+    }
+  });
+  if (harmonyButton) harmonyButton.addEventListener('click', () => {
+    try {
+      const fg = parseCssColor(fgText.value);
+      const palette = generateHarmony(fg);
+      renderHarmonyOutput(palette);
+    } catch (e) {
+      liveRegion.textContent = 'Could not generate harmony: invalid foreground color.';
+    }
+  });
+
+  // Render saved palette once at startup
+  renderSavedPalette();
+
+  // wire Clear All / Copy Palette (in-case elements exist in HTML)
+  const clearBtn = document.getElementById('clearPalette');
+  if (clearBtn) clearBtn.addEventListener('click', () => { localStorage.removeItem(PALETTE_KEY); renderSavedPalette(); updateBarChart(); });
+  const copyBtn = document.getElementById('copyPalette');
+  if (copyBtn) copyBtn.addEventListener('click', async () => {
+    const vals = loadSavedPalette().map(i => i.value).join(', ');
+    try { await navigator.clipboard.writeText(vals); alert('Palette copied to clipboard'); } catch (e) { alert('Copy failed: ' + e); }
+  });
+
+  // Random button handlers (local scope)
+  document.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (!t) return;
+    const id = t.id || '';
+    if (id === 'randomFgDark') {
+      const hex = randomDarkHex();
+      fgText.value = hex; fgPicker.value = hex; updateAll();
+    } else if (id === 'randomFgLight') {
+      const hex = randomLightHex();
+      fgText.value = hex; fgPicker.value = hex; updateAll();
+    } else if (id === 'randomBgDark') {
+      const hex = randomDarkHex();
+      bgText.value = hex; bgPicker.value = hex; updateAll();
+    } else if (id === 'randomBgLight') {
+      const hex = randomLightHex();
+      bgText.value = hex; bgPicker.value = hex; updateAll();
+    } else if (id === 'randomThird') {
+      const hex = randomHex();
+      thirdText.value = hex; thirdPicker.value = hex;
+      if (enableThird && !enableThird.checked) { enableThird.checked = true; thirdContainer.classList.remove('hidden'); }
+      updateAll();
+    } else if (id === 'randomThirdDark') {
+      const hex = randomDarkHex();
+      thirdText.value = hex; thirdPicker.value = hex;
+      if (enableThird && !enableThird.checked) { enableThird.checked = true; thirdContainer.classList.remove('hidden'); }
+      updateAll();
+    } else if (id === 'randomThirdLight') {
+      const hex = randomLightHex();
+      thirdText.value = hex; thirdPicker.value = hex;
+      if (enableThird && !enableThird.checked) { enableThird.checked = true; thirdContainer.classList.remove('hidden'); }
+      updateAll();
+    } else if (id === 'fgLighter') {
+      const h = nudgeLightness(fgText.value || fgPicker.value, -6);
+      fgText.value = h; fgPicker.value = parseCssColor(h).hex; updateAll();
+    } else if (id === 'fgDarker') {
+      const h = nudgeLightness(fgText.value || fgPicker.value, 6);
+      fgText.value = h; fgPicker.value = parseCssColor(h).hex; updateAll();
+    } else if (id === 'bgLighter') {
+      const h = nudgeLightness(bgText.value || bgPicker.value, -6);
+      bgText.value = h; bgPicker.value = parseCssColor(h).hex; updateAll();
+    } else if (id === 'bgDarker') {
+      const h = nudgeLightness(bgText.value || bgPicker.value, 6);
+      bgText.value = h; bgPicker.value = parseCssColor(h).hex; updateAll();
+    } else if (id === 'thirdLighter') {
+      const h = nudgeLightness(thirdText.value || thirdPicker.value, -6);
+      thirdText.value = h; thirdPicker.value = parseCssColor(h).hex; updateAll();
+    } else if (id === 'thirdDarker') {
+      const h = nudgeLightness(thirdText.value || thirdPicker.value, 6);
+      thirdText.value = h; thirdPicker.value = parseCssColor(h).hex; updateAll();
+    }
+  });
+
   updateAll();
 }
+
+// (removed duplicate global random helpers; random helpers live inside setup)
+
+
 
 
 

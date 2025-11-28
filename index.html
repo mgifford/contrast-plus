@@ -20,11 +20,7 @@
         <button type="button" class="theme-toggle-button" data-theme-choice="dark">Dark</button>
       </div>
       <p>
-        Enter colors using any CSS color format supported by your browser
-        (for example <code>black</code>, <code>white</code>, <code>rebeccapurple</code>,
-        <code>rgb(0, 0, 0)</code>, <code>hsl(210 50% 40%)</code>,
-        or modern formats such as <code>lch(...)</code> and <code>oklch(...)</code>
-        in browsers that support them. This tool evaluates WCAG&nbsp;2.x contrast ratios and,
+        Enter colors using any modern CSS color format supported by your browser. This tool evaluates WCAG&nbsp;2.x contrast ratios and,
         when available, APCA Lc values.
       </p>
     </header>
@@ -42,7 +38,20 @@
           </label>
           <label class="field">
             <span>Picker</span>
-            <input id="fgPicker" class="color-input" type="color" value="#B53636">
+            <div class="picker-row">
+              <input id="fgPicker" class="color-input" type="color" value="#B53636">
+              <div class="mini-group" aria-hidden="false">
+                <div class="mini-label">Nudge</div>
+                <button id="fgLighter" class="mini-btn" title="Make foreground darker" aria-label="Make foreground darker">+</button>
+                <button id="fgDarker" class="mini-btn" title="Make foreground lighter" aria-label="Make foreground lighter">−</button>
+              </div>
+              <div class="mini-group">
+                <div class="mini-label">Random</div>
+                <button id="randomFgDark" class="mini-btn" title="Random darker foreground" aria-label="Random darker foreground">Dark</button>
+                <button id="randomFgLight" class="mini-btn" title="Random lighter foreground" aria-label="Random lighter foreground">Light</button>
+              </div>
+              <button id="saveFg" class="small-btn picker-save" title="Save foreground color">Save</button>
+            </div>
           </label>
         </div>
 
@@ -54,15 +63,28 @@
           </label>
           <label class="field">
             <span>Picker</span>
-            <input id="bgPicker" class="color-input" type="color" value="#4e4c18">
+            <div class="picker-row">
+              <input id="bgPicker" class="color-input" type="color" value="#4e4c18">
+              <div class="mini-group">
+                <div class="mini-label">Nudge</div>
+                <button id="bgLighter" class="mini-btn" title="Make background darker" aria-label="Make background darker">+</button>
+                <button id="bgDarker" class="mini-btn" title="Make background lighter" aria-label="Make background lighter">−</button>
+              </div>
+              <div class="mini-group">
+                <div class="mini-label">Random</div>
+                <button id="randomBgDark" class="mini-btn" title="Random darker background" aria-label="Random darker background">Dark</button>
+                <button id="randomBgLight" class="mini-btn" title="Random lighter background" aria-label="Random lighter background">Light</button>
+              </div>
+              <button id="saveBg" class="small-btn picker-save" title="Save background color">Save</button>
+            </div>
           </label>
         </div>
 
         <div class="color-group">
-          <h3>Third / focus color</h3>
+          <h3>Focus color</h3>
           <label class="field checkbox-field">
             <input id="enableThird" type="checkbox">
-            <span>Enable focus or hover color (for WCAG&nbsp;2.2&nbsp;2.4.13)</span>
+            <span>Enable focus/hover color</span>
           </label>
           <div id="thirdContainer" class="third-container hidden">
             <label class="field">
@@ -72,18 +94,31 @@
             </label>
             <label class="field">
               <span>Picker</span>
-              <input id="thirdPicker" class="color-input" type="color"
-                     value="#663399">
+              <div class="picker-row">
+                <input id="thirdPicker" class="color-input" type="color" value="#663399">
+                <div class="mini-group">
+                  <div class="mini-label">Nudge</div>
+                  <button id="thirdLighter" class="mini-btn" title="Make focus color darker" aria-label="Make focus color darker">+</button>
+                  <button id="thirdDarker" class="mini-btn" title="Make focus color lighter" aria-label="Make focus color lighter">−</button>
+                </div>
+                <div class="mini-group">
+                  <div class="mini-label">Random</div>
+                  <button id="randomThirdDark" class="mini-btn" title="Random darker focus color" aria-label="Random darker focus color">Dark</button>
+                  <button id="randomThirdLight" class="mini-btn" title="Random lighter focus color" aria-label="Random lighter focus color">Light</button>
+                </div>
+                <button id="saveThird" class="small-btn picker-save" title="Save focus color">Save</button>
+                <button id="findBestFocus" class="small-btn picker-find" title="Suggest focus color" aria-label="Suggest focus color">Suggestion</button>
+              </div>
             </label>
+            <div id="focusCandidates" class="focus-candidates small" aria-live="polite"></div>
           </div>
         </div>
       </div>
 
-      <p id="colorExamples" class="small">
-        Examples: <code>black</code>, <code>white</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
-        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code>, <code>oklch(0.7 0.16 250)</code>.
-        Modern formats require browser support.
-      </p>
+      <p id="colorExamples" class="small"><i>
+        <b>Examples:</b> <code>black</code>, <code>white</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
+        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code>, and <code>oklch(0.7 0.16 250)</code>
+      </i></p>
 
       <div class="input-row thresholds-row" aria-label="Contrast thresholds">
         <div class="threshold-group">
@@ -119,11 +154,11 @@
       <div class="preview-controls" aria-label="Color simulation options">
         <span class="small">View preview as:</span>
         <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
-          <button type="button" class="sim-toggle sim-toggle-active" data-sim="normal">Normal</button>
-          <button type="button" class="sim-toggle" data-sim="grayscale">Grayscale</button>
-          <button type="button" class="sim-toggle" data-sim="protanopia">Protanopia</button>
-          <button type="button" class="sim-toggle" data-sim="deuteranopia">Deuteranopia</button>
-          <button type="button" class="sim-toggle" data-sim="tritanopia">Tritanopia</button>
+          <button type="button" class="sim-toggle btn-primary" data-sim="normal" aria-pressed="true">Normal</button>
+          <button type="button" class="sim-toggle btn-secondary" data-sim="grayscale" aria-pressed="false">Grayscale</button>
+          <button type="button" class="sim-toggle btn-secondary" data-sim="protanopia" aria-pressed="false">Protanopia</button>
+          <button type="button" class="sim-toggle btn-secondary" data-sim="deuteranopia" aria-pressed="false">Deuteranopia</button>
+          <button type="button" class="sim-toggle btn-secondary" data-sim="tritanopia" aria-pressed="false">Tritanopia</button>
         </div>
       </div>
 
@@ -147,24 +182,25 @@
             <button id="demoButtonBase" type="button" class="demo-button">
               Example button
             </button>
-            <div id="iconRowBase" class="icon-row" aria-label="Sample icons">
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8"></circle>
-              </svg>
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3l7 7-7 7-7-7z"></path>
-              </svg>
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="5" width="14" height="14" rx="3" ry="3"></rect>
-              </svg>
+            <div class="button-variants">
+              <button class="btn btn-text">Text</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-filled">Filled</button>
+              <button class="btn btn-raised">Raised</button>
             </div>
+            <button id="demoGhostBase" type="button" class="demo-button btn ghost">Ghost button</button>
+            <div id="barChartContainer" class="bar-chart" aria-hidden="true"></div>
+            <a id="svgContainerLink" href="#previewThird" class="svg-link" aria-hidden="true">
+              <div id="svgContainer" class="svg-container" role="img" aria-label="Preview icon"></div>
+            </a>
+            <div id="previewSavedIconsBase" class="preview-saved-icons" aria-hidden="false"></div>
           </div>
         </div>
 
         <div id="previewThirdCard" class="preview-card hidden">
-          <h3>Third or focus color on background</h3>
-          <div id="previewThird" class="preview-box" aria-label="Preview of focus or hover color on background">
-            <h4 id="demoHeadingThird">Focused or hover state</h4>
+          <h3>Focus states exposed</h3>
+              <div id="previewThird" class="preview-box" aria-label="Preview of focus states on background">
+                <h4 id="demoHeadingThird">Focus state example</h4>
             <p>
               This area shows how a focus or hover state could look against the
               background using your third color, contrasted with the main foreground.
@@ -175,17 +211,18 @@
             <button id="demoButtonThird" type="button" class="demo-button demo-button-focus">
               Focused button example
             </button>
-            <div id="iconRowThird" class="icon-row" aria-label="Sample icons in focus state">
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="8"></circle>
-              </svg>
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 3l7 7-7 7-7-7z"></path>
-              </svg>
-              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="5" y="5" width="14" height="14" rx="3" ry="3"></rect>
-              </svg>
+            <div class="button-variants">
+              <button class="btn btn-text">Text</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-filled">Filled</button>
+              <button class="btn btn-raised">Raised</button>
             </div>
+            <button id="demoGhostThird" type="button" class="demo-button btn ghost">Ghost button</button>
+            <div id="barChartContainerThird" class="bar-chart" aria-hidden="true"></div>
+            <a id="svgContainerLinkThird" href="#" class="svg-link" aria-hidden="true">
+              <div id="svgContainerThird" class="svg-container" role="img" aria-label="Preview focus icon"></div>
+            </a>
+              <div id="previewSavedIconsThird" class="preview-saved-icons" aria-hidden="false"></div>
           </div>
         </div>
       </div>
@@ -200,6 +237,7 @@
         <thead>
         <tr>
           <th scope="col">Pair</th>
+          <th scope="col">Colors</th>
           <th scope="col">WCAG ratio</th>
           <th scope="col">WCAG status</th>
           <th scope="col">APCA Lc</th>
@@ -238,6 +276,27 @@
           <div id="thirdSuggestions" class="swatches"></div>
         </div>
         <p class="small" id="suggestionStatus"></p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="harmony-heading">
+      <h2 id="harmony-heading">Harmony Palette Generator</h2>
+      <p class="small">Generate a 5-color harmonious palette based on the current foreground color. (No external API used.)</p>
+      <div class="harmony-controls">
+        <button id="harmonyButton" type="button">Generate Harmony Palette</button>
+        <div id="harmonyNote" class="small muted">Harmony is generated by rotating hue and adjusting lightness/saturation from the foreground color to produce visually distinct but related swatches.</div>
+      </div>
+      <div id="harmonyOutput" class="harmony-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="saved-heading">
+      <h2 id="saved-heading">Saved Color Palette (<span id="paletteCount">0</span>)</h2>
+      <div id="paletteContainer" class="palette-list">
+        <p id="palettePlaceholder" class="small italic">No saved colors yet. Use the Save buttons near color inputs.</p>
+          <div class="palette-footer">
+            <button id="clearPalette" type="button">Clear all</button>
+            <button id="copyPalette" type="button">Copy palette</button>
+          </div>
       </div>
     </section>
 

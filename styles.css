@@ -17,6 +17,42 @@
   --link-hover: #0842a0;
 }
 
+/* Button variants inspired by common UI patterns */
+.btn-primary {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-color: transparent;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--link-color);
+  border: 1px solid var(--link-color);
+}
+.btn-subtle {
+  background: rgba(15,23,42,0.03);
+  color: var(--text-color);
+  border: 1px solid transparent;
+}
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+/* Ensure ghost has an exposed focus state used for the "Focus states exposed" preview */
+.btn.ghost:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+  color: var(--text-color);
+}
+
 :root[data-theme="dark"] {
   --border-color: #374151;
   --border-radius: 8px;
@@ -33,6 +69,8 @@
   --text-color: #e5e7eb;
   --link-color: #93c5fd;
   --link-hover: #bfdbfe;
+  /* Simulation toggle active overrides for better contrast in dark mode */
+  /* `--link-color` is already light in dark theme so it will be used directly */
 }
 
 /* Respect system preference when no explicit theme is set */
@@ -96,6 +134,7 @@
   --button-bg: #0b57d0;
   --button-bg-hover: #0842a0;
   --button-text: #ffffff;
+  --focus-color: #663399;
   --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
   --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -121,6 +160,24 @@
     --button-text: #111827;
     --shadow-soft: 0 10px 25px rgba(0, 0, 0, 0.6);
   }
+
+/* Ensure inputs and buttons swap appropriately in light/dark */
+.text-input, .color-input, select {
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.btn { background: var(--button-bg); color: var(--button-text); border-color: transparent; }
+.btn:hover { background: var(--button-bg-hover); }
+.btn:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
+
+.btn.ghost { background: transparent; color: var(--text-color); border: 1px solid var(--border-color); }
+.btn.ghost:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
+
+/* Ensure picker random/save buttons are visible */
+.picker-random, .picker-save { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); padding: 0.25rem 0.45rem; border-radius: 6px; }
+
 }
 
 *,
@@ -169,8 +226,10 @@ a:hover {
   z-index: 999;
 }
 
-.skip-link:focus {
+.skip-link:focus-visible {
   transform: translateY(0);
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
 }
 
 .page {
@@ -238,9 +297,9 @@ a:hover {
   color: var(--text-color);
 }
 
-.text-input:focus {
-  outline: 2px solid var(--link-color);
-  outline-offset: 1px;
+.text-input:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
 }
 
 .color-input {
@@ -278,9 +337,11 @@ a:hover {
   color: var(--text-color);
 }
 
-.threshold-group select:focus {
-  outline: 2px solid var(--link-color);
-  outline-offset: 1px;
+.threshold-group select { display: block; width: 100%; box-sizing: border-box; z-index: 2; }
+
+.threshold-group select:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
 }
 
 .preview-controls {
@@ -302,19 +363,30 @@ a:hover {
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   border: 1px solid var(--border-color);
-  background: rgba(148, 163, 184, 0.05);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
   font-size: 0.78rem;
   cursor: pointer;
 }
 
 .sim-toggle-active {
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--link-color);
+  color: var(--panel-bg);
   border-color: var(--link-color);
+  /* safe fallback for shadow, overridden by color-mix where supported */
+  --sim-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: var(--sim-shadow);
 }
 
 .sim-toggle:focus-visible {
-  outline: 2px solid var(--link-color);
-  outline-offset: 1px;
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+@supports (color-mix(in srgb, red 50%, blue 50%)) {
+  .sim-toggle-active {
+    --sim-shadow: 0 2px 8px color-mix(in srgb, var(--link-color) 40%, rgba(0,0,0,0.12));
+    box-shadow: var(--sim-shadow);
+  }
 }
 
 .preview-grid {
@@ -358,11 +430,11 @@ a:hover {
 }
 
 .demo-button-focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 3px var(--focus-color);
 }
 
 .demo-button:focus-visible {
-  outline: 2px solid var(--link-color);
+  outline: 3px solid var(--focus-color);
   outline-offset: 2px;
 }
 
@@ -402,6 +474,63 @@ a:hover {
   font-size: 0.9rem;
 }
 
+/* Additional UI tweaks */
+.btn {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.palette-footer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.palette-list .palette-actions button {
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.25rem 0.45rem;
+  border-radius: 6px;
+}
+
+/* Ensure demo buttons and focus rings use the global focus color */
+.focus-ring {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--focus-color) 20%, rgba(2,6,23,0.12));
+}
+
+/* Apply consistent focus ring to common interactive elements */
+.demo-button:focus-visible, .btn:focus-visible, a:focus-visible, .svg-link:focus-visible, .bar-chart-bar:focus-visible {
+  outline: 3px solid var(--focus-color, rgba(59,130,246,0.9));
+  outline-offset: 3px;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--focus-color, #8ab4f8) 18%, rgba(2,6,23,0.08));
+}
+
+.palette-list .palette-item { display: flex; align-items: center; justify-content: space-between; padding: 0.25rem 0; }
+
+select, .small-select {
+  min-width: 180px;
+  padding: 0.35rem;
+  border-radius: 6px;
+}
+
+/* Ensure good contrast in light mode for elements that were previously low-contrast */
+:root[data-theme="light"] .btn.ghost { color: #374151; }
+
+
 .results-table th,
 .results-table td {
   border: 1px solid var(--table-border);
@@ -427,8 +556,8 @@ a:hover {
 }
 
 .status-pass {
-  background: var(--pass-bg);
-  color: #0d652d;
+  background: #16a34a; /* green */
+  color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -438,9 +567,42 @@ a:hover {
 }
 
 .status-fail {
-  background: var(--fail-bg);
-  color: #a50e0e;
+  background: #ef4444; /* red */
+  color: #ffffff;
 }
+
+/* Results color display (small swatches + code) */
+.result-colors { width: 14rem; min-width: 12rem; }
+.result-color-wrap { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+.result-swatch { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.08); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.04); }
+.result-color-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--muted); }
+
+@media (max-width: 720px) {
+  .results-table {
+    display: block;
+  }
+  .results-table thead { display: none; }
+  .results-table tbody { display: block; }
+  .results-table tr { display: block; margin-bottom: 0.75rem; border: 1px solid var(--table-border); border-radius: 8px; padding: 0.45rem; }
+  .results-table td { display: block; padding: 0.35rem 0.5rem; border: none; }
+  .results-table td::before { content: attr(data-label); display: inline-block; width: 30%; font-weight: 600; color: var(--muted); }
+  .result-colors { width: 100%; min-width: auto; }
+  .result-color-wrap { gap: 0.4rem; }
+}
+
+@media (max-width: 420px) {
+  .mini-btn { padding: 0 4px; font-size: 0.72rem; min-width: 26px; }
+  .mini-label { font-size: 0.6rem; }
+}
+
+
+/* Focus candidate cards */
+.focus-candidates { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.focus-candidate { display: flex; gap: 0.5rem; align-items: center; padding: 0.35rem 0.45rem; border: 1px solid var(--table-border); border-radius: 8px; background: rgba(0,0,0,0.02); }
+.focus-candidate .result-swatch { width: 34px; height: 34px; border-radius: 6px; }
+.focus-candidate-meta { display: flex; flex-direction: column; gap: 0.3rem; }
+.focus-candidate .btn { padding: 0.25rem 0.45rem; font-size: 0.85rem; }
+
 
 @media (prefers-color-scheme: dark) {
   .status-fail {
@@ -526,11 +688,233 @@ a:hover {
   margin-bottom: 0.25rem;
 }
 
+/* Button variant styles for previews */
+.button-variants { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.btn-text { background: transparent; color: inherit; border: none; padding: 0.35rem 0.6rem; }
+.btn-ghost { background: transparent; border: 1px solid currentColor; color: inherit; padding: 0.35rem 0.6rem; }
+.btn-filled { background: var(--preview-fg, currentColor); color: var(--preview-bg, var(--panel-bg)); border: none; padding: 0.35rem 0.6rem; }
+.btn-raised {
+  /* Use preview variables so the raised button mirrors the FG/BG preview colors */
+  --raised-fg: var(--preview-fg, currentColor);
+  --raised-bg: var(--preview-bg, var(--panel-bg));
+  --raised-shadow: color-mix(in srgb, var(--raised-fg) 14%, rgba(2,6,23,0.18));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--raised-fg) 18%, white 6%), var(--raised-fg) 100%);
+  color: var(--raised-bg);
+  padding: 0.4rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 6px 14px var(--raised-shadow), inset 0 1px 0 color-mix(in srgb, var(--raised-bg) 6%, rgba(255,255,255,0.06));
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+.btn-raised:hover {
+  filter: brightness(0.98);
+  transform: translateY(-1px);
+}
+.btn-raised:active, .btn-raised.btn-toggle-active[aria-pressed="true"] {
+  transform: translateY(1px);
+  box-shadow: 0 3px 8px var(--raised-shadow), inset 0 3px 6px color-mix(in srgb, rgba(0,0,0,0.18), var(--raised-bg) 10%);
+}
+
+/* Ensure hover and focus are visible for these preview buttons */
+.button-variants .btn:focus-visible, .button-variants .btn:hover { outline: none; filter: brightness(0.95); }
+.button-variants .btn:focus-visible { box-shadow: 0 0 0 3px var(--focus-color); }
+
 .page-footer {
   font-size: 0.8rem;
   color: var(--muted);
   margin-top: 1rem;
 }
+
+/* Small button next to color picker */
+.small-btn {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.small-btn:hover { background: rgba(0,0,0,0.03); }
+
+/* Picker row: keep picker and save button compact and aligned */
+.picker-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mini-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
+  margin: 0 0.14rem;
+}
+.mini-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  line-height: 1;
+}
+.mini-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.78rem;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  cursor: pointer;
+}
+.mini-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(2,6,23,0.06); }
+
+.picker-save {
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+  height: 2.2rem;
+}
+
+.picker-find {
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+  height: 2.2rem;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+
+.color-input {
+  padding: 0;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  height: 2.2rem;
+  width: 2.2rem;
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  align-items: end;
+  gap: 6px;
+  height: 84px;
+  margin-top: 8px;
+  padding: 6px;
+}
+.bar-chart-bar {
+  width: 18px;
+  border-radius: 6px 6px 0 0;
+  transition: height 220ms ease, background-color 180ms ease, transform 120ms ease, box-shadow 120ms ease;
+  position: relative;
+  will-change: transform, box-shadow;
+}
+
+/* show color code on hover/focus */
+.bar-chart-bar .bar-code {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.18rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  display: none;
+  z-index: 4;
+}
+.bar-chart-bar:focus-visible .bar-code,
+.bar-chart-bar.bar-hover .bar-code,
+.bar-chart-bar:hover .bar-code {
+  display: block;
+}
+
+.bar-focus-highlight {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18), 0 0 0 4px rgba(0,0,0,0.06) inset;
+  transform: translateY(-8px) scale(1.06);
+  border: 2px solid rgba(255,255,255,0.06);
+}
+
+.bar-chart-bar:focus-visible,
+.bar-chart-bar.bar-hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(12, 12, 12, 0.12);
+}
+
+#previewThirdCard .bar-chart-bar:focus-visible,
+#previewThirdCard .bar-chart-bar.bar-hover {
+  outline: 3px solid var(--focus-color, rgba(59,130,246,0.9));
+  outline-offset: 3px;
+  transform: translateY(-8px) scale(1.04);
+}
+
+.bar-chart-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 6px;
+}
+
+/* ensure label text contrasts by using panel bg text color */
+.bar-chart-bar .bar-chart-label { color: var(--text-color); }
+
+.svg-link { display: inline-block; text-decoration: none; border-radius: 8px; }
+.svg-container { width: 64px; height: 64px; margin-top: 8px; display: flex; align-items: center; justify-content: center; }
+.svg-link:focus-visible .svg-container, .svg-link:hover .svg-container { box-shadow: 0 0 0 6px rgba(59,130,246,0.12); border-radius: 8px; transform: translateY(-2px); }
+.svg-link:focus-visible .svg-container { box-shadow: 0 0 0 6px var(--focus-color, rgba(59,130,246,0.18)); }
+
+/* saved palette icon hover/focus micro animation */
+.palette-item .svg-link svg {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.palette-item .svg-link:focus svg,
+.palette-item .svg-link:hover svg {
+  transform: translateY(-4px) scale(1.04);
+}
+
+.picker-random { background: transparent; border: 1px dashed var(--border-color); padding: 0.22rem 0.45rem; font-size: 0.78rem; border-radius: 6px; }
+.picker-random:hover { background: rgba(0,0,0,0.03); }
+
+/* SVG container */
+.svg-container { width: 64px; height: 64px; margin-top: 8px; }
+
+/* Harmony grid */
+.harmony-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+.harmony-swatch { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.harmony-box { width: 100%; height: 48px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; }
+.harmony-label { font-size: 0.75rem; color: var(--muted); text-align: center; }
+
+/* Saved palette list */
+.palette-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+.palette-item { display: flex; gap: 12px; align-items: center; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(15,23,42,0.01); }
+.palette-swatch { width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.04); }
+.palette-meta { flex: 1 1 auto; display: flex; flex-direction: column; }
+.palette-value { font-family: monospace; font-size: 0.85rem; color: var(--muted); }
+.palette-actions { display: flex; gap: 6px; }
+.palette-actions button { padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; }
+/* preview saved icons are rendered in the preview panels */
+
+/* Row of larger saved color icons for quick preview */
+#savedIconsRow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.saved-icon-link { width: 64px; height: 64px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; }
+.saved-icon-link svg { width: 56px; height: 56px; }
+.saved-icon-link:hover, .saved-icon-link:focus { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+.swatch-small { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border-color); }
+.palette-meta { flex: 1 1 auto; display: flex; flex-direction: column; }
+.palette-label { font-weight: 600; }
+.palette-value { font-family: monospace; font-size: 0.85rem; color: var(--muted); }
+.palette-actions { display: flex; gap: 6px; }
+.palette-actions button { padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid var(--border-color); background: transparent; cursor: pointer; }
+
 
 .visually-hidden {
   position: absolute;

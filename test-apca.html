@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APCA Test</title>
+</head>
+<body>
+  <h1>APCA Module Test</h1>
+  <div id="output"></div>
+  <script type="module">
+    const output = document.getElementById('output');
+    
+    try {
+      const mod = await import("https://cdn.jsdelivr.net/npm/apca-w3@0.1.9/+esm");
+      const APCAcontrast = mod.APCAcontrast;
+      
+      output.innerHTML += '<p><strong>APCA module loaded successfully</strong></p>';
+      
+      // Test with hsl(0, 54%, 46%) = rgb(184, 54, 54) and #4e4c18
+      const textRgb = [184, 54, 54];
+      const bgRgb = [78, 76, 24];
+      
+      const lc = APCAcontrast(textRgb, bgRgb);
+      output.innerHTML += `<p>APCAcontrast([184, 54, 54], [78, 76, 24]) = ${lc}</p>`;
+      
+      // Try reversed
+      const lcReversed = APCAcontrast(bgRgb, textRgb);
+      output.innerHTML += `<p>APCAcontrast([78, 76, 24], [184, 54, 54]) = ${lcReversed}</p>`;
+      
+    } catch (e) {
+      output.innerHTML += `<p><strong>Error:</strong> ${e.message}</p>`;
+      console.error(e);
+    }
+  </script>
+</body>
+</html>
