@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>APCA + WCAG 2 Contrast Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+        content="Compare APCA and WCAG 2.x contrast, see previews, and explore suggestions for foreground, background, and focus colors.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <main id="main" class="page" data-sim="normal">
+    <header class="page-header">
+      <h1>APCA + WCAG 2 Contrast Checker</h1>
+      <div class="theme-toggle" aria-label="Color theme">
+        <button type="button" class="theme-toggle-button" data-theme-choice="system">System</button>
+        <button type="button" class="theme-toggle-button" data-theme-choice="light">Light</button>
+        <button type="button" class="theme-toggle-button" data-theme-choice="dark">Dark</button>
+      </div>
+      <p>
+        Enter colors using any CSS color format supported by your browser
+        (for example <code>black</code>, <code>white</code>, <code>rebeccapurple</code>,
+        <code>rgb(0, 0, 0)</code>, <code>hsl(210 50% 40%)</code>,
+        or modern formats such as <code>lch(...)</code> and <code>oklch(...)</code>
+        in browsers that support them. This tool evaluates WCAG&nbsp;2.x contrast ratios and,
+        when available, APCA Lc values.
+      </p>
+    </header>
+
+    <section class="panel" aria-labelledby="inputs-heading">
+      <h2 id="inputs-heading">Inputs</h2>
+
+      <div class="input-row">
+        <div class="color-group">
+          <h3>Foreground</h3>
+          <label class="field">
+            <span>Color value</span>
+            <input id="fgText" class="text-input" type="text" value="hsl(0, 54%, 46%)" autocomplete="off"
+                   aria-describedby="colorExamples">
+          </label>
+          <label class="field">
+            <span>Picker</span>
+            <input id="fgPicker" class="color-input" type="color" value="#B53636">
+          </label>
+        </div>
+
+        <div class="color-group">
+          <h3>Background</h3>
+          <label class="field">
+            <span>Color value</span>
+            <input id="bgText" class="text-input" type="text" value="#4e4c18" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>Picker</span>
+            <input id="bgPicker" class="color-input" type="color" value="#4e4c18">
+          </label>
+        </div>
+
+        <div class="color-group">
+          <h3>Third / focus color</h3>
+          <label class="field checkbox-field">
+            <input id="enableThird" type="checkbox">
+            <span>Enable focus or hover color (for WCAG&nbsp;2.2&nbsp;2.4.13)</span>
+          </label>
+          <div id="thirdContainer" class="third-container hidden">
+            <label class="field">
+              <span>Focus color value</span>
+              <input id="thirdText" class="text-input" type="text"
+                     value="rebeccapurple" autocomplete="off">
+            </label>
+            <label class="field">
+              <span>Picker</span>
+              <input id="thirdPicker" class="color-input" type="color"
+                     value="#663399">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <p id="colorExamples" class="small">
+        Examples: <code>black</code>, <code>white</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
+        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code>, <code>oklch(0.7 0.16 250)</code>.
+        Modern formats require browser support.
+      </p>
+
+      <div class="input-row thresholds-row" aria-label="Contrast thresholds">
+        <div class="threshold-group">
+          <h3>WCAG 2.x threshold</h3>
+          <label>
+            <span>Target ratio</span>
+            <select id="wcagThreshold">
+              <option value="4.5">4.5:1 (AA normal text)</option>
+              <option value="3">3:1 (AA large text or UI)</option>
+              <option value="7">7:1 (AAA)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="threshold-group">
+          <h3>APCA threshold</h3>
+          <label>
+            <span>Target Lc</span>
+            <select id="apcaThreshold">
+              <option value="60">60 (body text)</option>
+              <option value="45">45 (large text or UI)</option>
+              <option value="75">75 (small text)</option>
+              <option value="90">90 (very small text)</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="preview-heading">
+      <h2 id="preview-heading">Preview</h2>
+
+      <div class="preview-controls" aria-label="Color simulation options">
+        <span class="small">View preview as:</span>
+        <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
+          <button type="button" class="sim-toggle sim-toggle-active" data-sim="normal">Normal</button>
+          <button type="button" class="sim-toggle" data-sim="grayscale">Grayscale</button>
+          <button type="button" class="sim-toggle" data-sim="protanopia">Protanopia</button>
+          <button type="button" class="sim-toggle" data-sim="deuteranopia">Deuteranopia</button>
+          <button type="button" class="sim-toggle" data-sim="tritanopia">Tritanopia</button>
+        </div>
+      </div>
+
+      <p class="small">
+        Both panels use your chosen colors for headings, body text, links, buttons, and simple icons.
+        The right-hand panel shows a focus or hover state using the third color when enabled.
+      </p>
+
+      <div class="preview-grid">
+        <div class="preview-card">
+          <h3>Foreground on background</h3>
+          <div id="previewBase" class="preview-box" aria-label="Preview of foreground on background">
+            <h4 id="demoHeadingBase">Example heading</h4>
+            <p>
+              The quick brown fox jumps over the lazy dog. 1234567890.
+              This paragraph uses the chosen foreground and background colors.
+            </p>
+            <p>
+              <a id="demoLinkBase" href="#">Example link text</a>
+            </p>
+            <button id="demoButtonBase" type="button" class="demo-button">
+              Example button
+            </button>
+            <div id="iconRowBase" class="icon-row" aria-label="Sample icons">
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8"></circle>
+              </svg>
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l7 7-7 7-7-7z"></path>
+              </svg>
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="3" ry="3"></rect>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div id="previewThirdCard" class="preview-card hidden">
+          <h3>Third or focus color on background</h3>
+          <div id="previewThird" class="preview-box" aria-label="Preview of focus or hover color on background">
+            <h4 id="demoHeadingThird">Focused or hover state</h4>
+            <p>
+              This area shows how a focus or hover state could look against the
+              background using your third color, contrasted with the main foreground.
+            </p>
+            <p>
+              <a id="demoLinkThird" href="#">Focused link example</a>
+            </p>
+            <button id="demoButtonThird" type="button" class="demo-button demo-button-focus">
+              Focused button example
+            </button>
+            <div id="iconRowThird" class="icon-row" aria-label="Sample icons in focus state">
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8"></circle>
+              </svg>
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3l7 7-7 7-7-7z"></path>
+              </svg>
+              <svg class="demo-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="3" ry="3"></rect>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="results-heading">
+      <h2 id="results-heading">Results</h2>
+
+      <div id="errorBox" class="error-box hidden" role="alert" aria-live="assertive"></div>
+
+      <table class="results-table">
+        <thead>
+        <tr>
+          <th scope="col">Pair</th>
+          <th scope="col">WCAG ratio</th>
+          <th scope="col">WCAG status</th>
+          <th scope="col">APCA Lc</th>
+          <th scope="col">APCA status</th>
+        </tr>
+        </thead>
+        <tbody id="resultsBody">
+        <!-- Filled by JS -->
+        </tbody>
+      </table>
+
+      <div id="focusSummary" class="focus-summary hidden">
+        <h3>Focus appearance (WCAG&nbsp;2.2&nbsp;2.4.13)</h3>
+        <p id="focusText"></p>
+      </div>
+    </section>
+
+    <section id="suggestSection" class="panel hidden" aria-labelledby="suggest-heading">
+      <h2 id="suggest-heading">Suggested colors that move toward both targets</h2>
+      <p class="small">
+        These suggestions adjust lightness (and, if needed, hue) to find nearby colors that
+        always satisfy the chosen WCAG ratio and, where possible, also meet the APCA target while staying close to your chosen colors.
+      </p>
+
+      <div id="suggestionBox" class="suggestion-box">
+        <div id="fgSuggestionBlock" class="suggest-block">
+          <h3>Adjust foreground (keep background)</h3>
+          <div id="fgSuggestions" class="swatches"></div>
+        </div>
+        <div id="bgSuggestionBlock" class="suggest-block">
+          <h3>Adjust background (keep foreground)</h3>
+          <div id="bgSuggestions" class="swatches"></div>
+        </div>
+        <div id="thirdSuggestionBlock" class="suggest-block hidden">
+          <h3>Third or focus color on background</h3>
+          <div id="thirdSuggestions" class="swatches"></div>
+        </div>
+        <p class="small" id="suggestionStatus"></p>
+      </div>
+    </section>
+
+    <div id="liveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+
+    <footer class="page-footer">
+      <p>
+        WCAG 2.x contrast uses the standard luminance formula. APCA is loaded via a separate script;
+        if it fails to load, APCA results show <code>n/a</code>. Color simulations are approximate
+        and for visual exploration only.
+      </p>
+    </footer>
+  </main>
+
+  <svg aria-hidden="true" class="visually-hidden">
+    <defs>
+      <!-- Approximate color blindness simulation filters -->
+      <filter id="sim-protanopia">
+        <feColorMatrix type="matrix" values="
+          0.567 0.433 0     0 0
+          0.558 0.442 0     0 0
+          0     0.242 0.758 0 0
+          0     0     0     1 0" />
+      </filter>
+      <filter id="sim-deuteranopia">
+        <feColorMatrix type="matrix" values="
+          0.625 0.375 0     0 0
+          0.7   0.3   0     0 0
+          0     0.3   0.7   0 0
+          0     0     0     1 0" />
+      </filter>
+      <filter id="sim-tritanopia">
+        <feColorMatrix type="matrix" values="
+          0.95  0.05  0     0 0
+          0     0.433 0.567 0 0
+          0     0.475 0.525 0 0
+          0     0     0     1 0" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
