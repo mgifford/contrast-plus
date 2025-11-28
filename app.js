@@ -94,13 +94,27 @@ function setupContrastTool() {
 
   const demoHeadingBase = document.getElementById("demoHeadingBase");
   const demoLinkBase = document.getElementById("demoLinkBase");
-  const demoButtonBase = document.getElementById("demoButtonBase");
+  const demoButtonBase = document.querySelector("#demoButtonBase");
 
   const demoHeadingThird = document.getElementById("demoHeadingThird");
   const demoLinkThird = document.getElementById("demoLinkThird");
-  const demoButtonThird = document.getElementById("demoButtonThird");
+  const demoButtonThird = document.querySelector("#demoButtonThird");
 
   const simToggles = Array.from(document.querySelectorAll(".sim-toggle"));
+
+  // Initialize simulation toggle visual state from aria-pressed attributes
+  simToggles.forEach(b => {
+    const pressed = b.getAttribute('aria-pressed') === 'true';
+    if (pressed) {
+      b.classList.add('sim-toggle-active');
+      b.classList.remove('btn-secondary');
+      b.classList.add('btn-primary');
+    } else {
+      b.classList.remove('sim-toggle-active');
+      b.classList.remove('btn-primary');
+      b.classList.add('btn-secondary');
+    }
+  });
 
   const errorBox = document.getElementById("errorBox");
   const resultsBody = document.getElementById("resultsBody");
@@ -118,6 +132,41 @@ function setupContrastTool() {
 
   
   const themeButtons = Array.from(document.querySelectorAll("[data-theme-choice]"));
+
+  // Read colors from URL params on load (e.g., ?fg=%23B53636&bg=%234e4c18&third=%23663399)
+  function readColorsFromURL() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fgParam = params.get('fg');
+      const bgParam = params.get('bg');
+      const thirdParam = params.get('third');
+      if (fgParam) {
+        try { const p = parseCssColor(fgParam); fgText.value = fgText.value || p.hex; fgPicker.value = p.hex; } catch {}
+      }
+      if (bgParam) {
+        try { const p = parseCssColor(bgParam); bgText.value = bgText.value || p.hex; bgPicker.value = p.hex; } catch {}
+      }
+      if (thirdParam) {
+        try { const p = parseCssColor(thirdParam); thirdText.value = thirdText.value || p.hex; thirdPicker.value = p.hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); } catch {}
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function updateURLWithColors(fgHex, bgHex, thirdHex) {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (fgHex) params.set('fg', fgHex);
+      else params.delete('fg');
+      if (bgHex) params.set('bg', bgHex);
+      else params.delete('bg');
+      if (thirdHex) params.set('third', thirdHex);
+      else params.delete('third');
+      const newUrl = window.location.pathname + '?' + params.toString();
+      history.replaceState(null, '', newUrl);
+    } catch (e) {}
+  }
 
   function applyTheme(mode) {
     const root = document.documentElement;
@@ -722,7 +771,7 @@ return picked.slice(0, count);
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.textContent = 'Delete';
-      delBtn.addEventListener('click', () => { if (item.id) { deleteSavedColor(item.id); } renderSavedPalette(); updateBarChart(); });
+      delBtn.addEventListener('click', () => { if (item.id) { deleteSavedColor(item.id); } renderSavedPalette(); try { updateBarChart([fgText.value || fgPicker.value, bgText.value || bgPicker.value, (document.getElementById('enableThird') && document.getElementById('enableThird').checked) ? (thirdText.value || thirdPicker.value) : null]); } catch(e){} });
 
       actions.appendChild(loadBtn);
       actions.appendChild(loadBgBtn);
@@ -737,49 +786,102 @@ return picked.slice(0, count);
       container.appendChild(row);
     });
 
-    // Render preview icons into both preview panels
+    // Render preview icons into both preview panels using sequential selection rules
     try {
       const baseIcons = document.getElementById('previewSavedIconsBase');
       const thirdIcons = document.getElementById('previewSavedIconsThird');
       if (baseIcons) baseIcons.innerHTML = '';
       if (thirdIcons) thirdIcons.innerHTML = '';
-      palette.forEach((item) => {
-        const makeBig = (containerEl) => {
-          const link = document.createElement('a');
-          link.href = '#';
-          link.className = 'saved-icon-link svg-link';
-          link.title = item.value + ' — click: FG, shift+click: BG, alt+click: Focus';
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const val = item.value;
-            try { updateSVG(val); } catch (err) {}
-            if (e.shiftKey) {
-              bgText.value = val; bgPicker.value = parseCssColor(val).hex; updateAll();
-            } else if (e.altKey) {
-              thirdText.value = val; thirdPicker.value = parseCssColor(val).hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); updateAll();
-            } else {
-              fgText.value = val; fgPicker.value = parseCssColor(val).hex; updateAll();
-            }
-          });
-          const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          svgEl.setAttribute('viewBox', '0 0 24 24');
-          svgEl.setAttribute('width', '56');
-          svgEl.setAttribute('height', '56');
-          svgEl.setAttribute('aria-hidden', 'true');
-          const pick = SVG_PATHS[Math.abs(hashCode(item.value)) % SVG_PATHS.length] || SVG_PATHS[0];
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          path.setAttribute('d', pick.path);
-          path.setAttribute('fill', item.value);
-          svgEl.appendChild(path);
-          link.appendChild(svgEl);
-          containerEl.appendChild(link);
-        };
-        if (baseIcons) makeBig(baseIcons);
-        if (thirdIcons) makeBig(thirdIcons);
-      });
+
+      // Helper: build a sequential list of colors from saved palette
+      const buildSequentialList = (savedArr, bgHex, focusHex, minCount = 4) => {
+        const seen = new Set();
+        const out = [];
+        const normalizedBg = bgHex ? String(bgHex).toLowerCase() : null;
+
+        // include focus first for third preview if provided
+        if (focusHex) {
+          const fh = String(focusHex);
+          if (fh && fh.toLowerCase() !== normalizedBg) {
+            out.push(fh);
+            seen.add(fh.toLowerCase());
+          }
+        }
+
+        // then include saved colors in their stored order, skipping any equal to BG
+        for (const s of savedArr) {
+          const val = String(s.value || '');
+          if (!val) continue;
+          const low = val.toLowerCase();
+          if (normalizedBg && low === normalizedBg) continue;
+          if (seen.has(low)) continue;
+          out.push(val);
+          seen.add(low);
+        }
+
+        // if fewer than minCount, add deterministic random-ish fillers (not random order)
+        let fillerIndex = 0;
+        while (out.length < minCount) {
+          // alternate dark and light to maintain variety
+          const hex = (fillerIndex % 2 === 0) ? randomDarkHex() : randomLightHex();
+          fillerIndex += 1;
+          const low = hex.toLowerCase();
+          if (normalizedBg && low === normalizedBg) continue;
+          if (seen.has(low)) continue;
+          out.push(hex);
+          seen.add(low);
+        }
+
+        return out;
+      };
+
+      // current bg and focus values from inputs (best-effort)
+      let bgHex = null;
+      let focusHex = null;
+      try { bgHex = document.getElementById('bgPicker').value; } catch (e) {}
+      try { if (document.getElementById('enableThird') && document.getElementById('enableThird').checked) focusHex = document.getElementById('thirdPicker').value; } catch (e) {}
+
+      const seqBase = buildSequentialList(palette, bgHex, null, 4);
+      const seqThird = buildSequentialList(palette, bgHex, focusHex, 4);
+
+      const makeBig = (color, containerEl) => {
+        const link = document.createElement('a');
+        link.href = '#';
+        link.className = 'saved-icon-link svg-link';
+        link.title = color + ' — click: FG, shift+click: BG, alt+click: Focus';
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const val = color;
+          try { updateSVG(val); } catch (err) {}
+          if (e.shiftKey) {
+            bgText.value = val; bgPicker.value = parseCssColor(val).hex; updateAll();
+          } else if (e.altKey) {
+            thirdText.value = val; thirdPicker.value = parseCssColor(val).hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); updateAll();
+          } else {
+            fgText.value = val; fgPicker.value = parseCssColor(val).hex; updateAll();
+          }
+        });
+        const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svgEl.setAttribute('viewBox', '0 0 24 24');
+        svgEl.setAttribute('width', '56');
+        svgEl.setAttribute('height', '56');
+        svgEl.setAttribute('aria-hidden', 'true');
+        const pick = SVG_PATHS[Math.abs(hashCode(color)) % SVG_PATHS.length] || SVG_PATHS[0];
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pick.path);
+        path.setAttribute('fill', color);
+        svgEl.appendChild(path);
+        link.appendChild(svgEl);
+        containerEl.appendChild(link);
+      };
+
+      if (baseIcons) seqBase.forEach(c => makeBig(c, baseIcons));
+      if (thirdIcons) seqThird.forEach(c => makeBig(c, thirdIcons));
     } catch (e) {
       // non-fatal
     }
+    // ensure bar chart reflects the current colors after re-rendering palette
+    try { updateBarChart([fgText.value || fgPicker.value, bgText.value || bgPicker.value, (document.getElementById('enableThird') && document.getElementById('enableThird').checked) ? (thirdText.value || thirdPicker.value) : null]); } catch (e) {}
   }
 
   // --- Harmony generator (no LLM) ---
@@ -850,22 +952,44 @@ return picked.slice(0, count);
 
   // --- Small dynamic visuals: bar chart + random SVG ---
   function updateBarChart(colors) {
-    // Build entries once and render into both containers
+    // Build entries once and render into both containers using sequential saved colors
     const saved = loadSavedPalette();
     const fgHex = (colors && colors[0]) || null;
     const bgHex = (colors && colors[1]) || null;
     const focusHex = (colors && colors[2]) || null;
     const entries = [];
+
     if (fgHex) entries.push({ label: 'Foreground', color: fgHex });
     if (focusHex) entries.push({ label: 'Focus', color: focusHex });
-    // add saved colors (skip any that match BG)
-    saved.forEach(s => {
-      const val = String(s.value || '').toLowerCase();
-      if (bgHex && val === String(bgHex).toLowerCase()) return;
-      if (!entries.some(e => e.color.toLowerCase() === val)) {
-        entries.push({ label: s.label, color: s.value });
-      }
-    });
+
+    // Helper to normalize hex/string
+    const norm = (v) => (v ? String(v).toLowerCase() : '');
+
+    // Add saved colors sequentially, skipping any equal to BG and duplicates
+    const normalizedBg = norm(bgHex);
+    const added = new Set(entries.map(e => norm(e.color)));
+
+    for (const s of saved) {
+      const val = String(s.value || '');
+      const low = norm(val);
+      if (!val) continue;
+      if (normalizedBg && low === normalizedBg) continue; // never include BG color
+      if (added.has(low)) continue;
+      entries.push({ label: s.label || 'Saved', color: val });
+      added.add(low);
+    }
+
+    // If fewer than 4 entries, add deterministic filler colors (dark/light alternation)
+    let fillerIdx = 0;
+    while (entries.length < 4) {
+      const hex = (fillerIdx % 2 === 0) ? randomDarkHex() : randomLightHex();
+      fillerIdx += 1;
+      const low = norm(hex);
+      if (normalizedBg && low === normalizedBg) continue;
+      if (added.has(low)) continue;
+      entries.push({ label: 'Generated', color: hex });
+      added.add(low);
+    }
 
     function renderBars(container, highlightFocus) {
       if (!container) return;
@@ -880,7 +1004,6 @@ return picked.slice(0, count);
         bar.className = 'bar-chart-bar';
         bar.tabIndex = 0;
         bar.setAttribute('role', 'img');
-        bar.setAttribute('aria-label', `${entry.label} color ${entry.color}`);
         // determine display color; if this is the focus entry and a focus color was passed, use it
         const isFocusEntry = entry.label && String(entry.label).toLowerCase().includes('focus');
         const displayColor = (isFocusEntry && focusHex) ? focusHex : entry.color;
@@ -891,8 +1014,11 @@ return picked.slice(0, count);
 
         const pct = document.createElement('div');
         pct.className = 'bar-chart-label';
-        pct.textContent = entry.label;
-        bar.appendChild(pct);
+        // show only the resolved color value (hex or css) as requested
+        pct.textContent = displayColor;
+        // expose the color value as the accessible label for copy/automation
+        bar.setAttribute('aria-label', `${displayColor}`);
+        bar.appendChild(pct);     
 
         // add hidden code box to show on hover/focus
         const code = document.createElement('div');
@@ -903,7 +1029,7 @@ return picked.slice(0, count);
         bar.appendChild(code);
         bar.setAttribute('aria-describedby', codeId);
 
-        bar.addEventListener('mouseenter', () => { bar.classList.add('bar-hover'); bar.title = `${entry.label} ${entry.color}`; });
+        bar.addEventListener('mouseenter', () => { bar.classList.add('bar-hover'); bar.title = displayColor; });
         bar.addEventListener('mouseleave', () => bar.classList.remove('bar-hover'));
         bar.addEventListener('focus', () => bar.classList.add('bar-hover'));
         bar.addEventListener('blur', () => bar.classList.remove('bar-hover'));
@@ -1103,6 +1229,9 @@ return picked.slice(0, count);
       // reset to default focus color when not enabled
       try { document.documentElement.style.setProperty('--focus-color', ''); } catch (e) {}
     }
+
+    // sync URL so colors are shareable
+    try { updateURLWithColors(fg.hex, bg.hex, thirdEnabled && third ? third.hex : null); } catch (e) {}
 
     let liveSummary = [];
 
@@ -1425,9 +1554,16 @@ return picked.slice(0, count);
       }
 
       suggestionStatus.textContent = parts.join(" ");
-      if (!parts.length) {
+      // Only show the suggestions panel if at least one suggestion swatch was rendered
+      const hasSuggestionSwatches = (
+        fgSuggestions.children.length > 0 ||
+        bgSuggestions.children.length > 0 ||
+        thirdSuggestions.children.length > 0
+      );
+      if (!hasSuggestionSwatches) {
         suggestSection.classList.add("hidden");
       } else {
+        suggestSection.classList.remove("hidden");
         liveSummary.push(suggestionStatus.textContent);
       }
     }
@@ -1692,7 +1828,7 @@ return picked.slice(0, count);
 
   // wire Clear All / Copy Palette (in-case elements exist in HTML)
   const clearBtn = document.getElementById('clearPalette');
-  if (clearBtn) clearBtn.addEventListener('click', () => { localStorage.removeItem(PALETTE_KEY); renderSavedPalette(); updateBarChart(); });
+  if (clearBtn) clearBtn.addEventListener('click', () => { localStorage.removeItem(PALETTE_KEY); renderSavedPalette(); try { updateBarChart([fgText.value || fgPicker.value, bgText.value || bgPicker.value, (document.getElementById('enableThird') && document.getElementById('enableThird').checked) ? (thirdText.value || thirdPicker.value) : null]); } catch(e){} });
   const copyBtn = document.getElementById('copyPalette');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
     const vals = loadSavedPalette().map(i => i.value).join(', ');
@@ -1752,6 +1888,8 @@ return picked.slice(0, count);
     }
   });
 
+  // read URL params first (if present) then initial render
+  try { readColorsFromURL(); } catch (e) {}
   updateAll();
 }
 

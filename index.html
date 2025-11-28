@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to main content</a>
+  <a class="skip-link" href="#fgText">Skip to main</a>
   <main id="main" class="page" data-sim="normal">
     <header class="page-header">
       <h1>APCA + WCAG 2 Contrast Checker</h1>
@@ -20,8 +20,7 @@
         <button type="button" class="theme-toggle-button" data-theme-choice="dark">Dark</button>
       </div>
       <p>
-        Enter colors using any modern CSS color format supported by your browser. This tool evaluates WCAG&nbsp;2.x contrast ratios and,
-        when available, APCA Lc values.
+        Enter colors using any modern CSS color format supported by your browser. This tool evaluates WCAG&nbsp;2.x contrast ratios and APCA Lc values.
       </p>
     </header>
 
@@ -33,13 +32,12 @@
           <h3>Foreground</h3>
           <label class="field">
             <span>Color value</span>
-            <input id="fgText" class="text-input" type="text" value="hsl(0, 54%, 46%)" autocomplete="off"
-                   aria-describedby="colorExamples">
+            <input id="fgText" class="text-input" type="text" value="#45ad7f" autocomplete="off" aria-describedby="colorExamples">
           </label>
           <label class="field">
             <span>Picker</span>
             <div class="picker-row">
-              <input id="fgPicker" class="color-input" type="color" value="#B53636">
+              <input id="fgPicker" class="color-input" type="color" value="#45ad7f">
               <div class="mini-group" aria-hidden="false">
                 <div class="mini-label">Nudge</div>
                 <button id="fgLighter" class="mini-btn" title="Make foreground darker" aria-label="Make foreground darker">+</button>
@@ -59,12 +57,12 @@
           <h3>Background</h3>
           <label class="field">
             <span>Color value</span>
-            <input id="bgText" class="text-input" type="text" value="#4e4c18" autocomplete="off">
+            <input id="bgText" class="text-input" type="text" value="hsl(159.43, 33.98%, 20.2%)" autocomplete="off">
           </label>
           <label class="field">
             <span>Picker</span>
             <div class="picker-row">
-              <input id="bgPicker" class="color-input" type="color" value="#4e4c18">
+              <input id="bgPicker" class="color-input" type="color" value="hsl(159.43, 33.98%, 20.2%)">
               <div class="mini-group">
                 <div class="mini-label">Nudge</div>
                 <button id="bgLighter" class="mini-btn" title="Make background darker" aria-label="Make background darker">+</button>
@@ -116,8 +114,8 @@
       </div>
 
       <p id="colorExamples" class="small"><i>
-        <b>Examples:</b> <code>black</code>, <code>white</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
-        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code>, and <code>oklch(0.7 0.16 250)</code>
+        <b>Examples:</b> <code>pink</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
+        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code> & <code>oklch(0.7 0.16 250)</code>
       </i></p>
 
       <div class="input-row thresholds-row" aria-label="Contrast thresholds">
@@ -179,20 +177,14 @@
             <p>
               <a id="demoLinkBase" href="#">Example link text</a>
             </p>
-            <button id="demoButtonBase" type="button" class="demo-button">
-              Example button
-            </button>
+            
             <div class="button-variants">
               <button class="btn btn-text">Text</button>
               <button class="btn btn-ghost">Ghost</button>
               <button class="btn btn-filled">Filled</button>
               <button class="btn btn-raised">Raised</button>
             </div>
-            <button id="demoGhostBase" type="button" class="demo-button btn ghost">Ghost button</button>
             <div id="barChartContainer" class="bar-chart" aria-hidden="true"></div>
-            <a id="svgContainerLink" href="#previewThird" class="svg-link" aria-hidden="true">
-              <div id="svgContainer" class="svg-container" role="img" aria-label="Preview icon"></div>
-            </a>
             <div id="previewSavedIconsBase" class="preview-saved-icons" aria-hidden="false"></div>
           </div>
         </div>
@@ -208,20 +200,13 @@
             <p>
               <a id="demoLinkThird" href="#">Focused link example</a>
             </p>
-            <button id="demoButtonThird" type="button" class="demo-button demo-button-focus">
-              Focused button example
-            </button>
             <div class="button-variants">
               <button class="btn btn-text">Text</button>
               <button class="btn btn-ghost">Ghost</button>
               <button class="btn btn-filled">Filled</button>
               <button class="btn btn-raised">Raised</button>
             </div>
-            <button id="demoGhostThird" type="button" class="demo-button btn ghost">Ghost button</button>
             <div id="barChartContainerThird" class="bar-chart" aria-hidden="true"></div>
-            <a id="svgContainerLinkThird" href="#" class="svg-link" aria-hidden="true">
-              <div id="svgContainerThird" class="svg-container" role="img" aria-label="Preview focus icon"></div>
-            </a>
               <div id="previewSavedIconsThird" class="preview-saved-icons" aria-hidden="false"></div>
           </div>
         </div>

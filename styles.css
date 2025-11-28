@@ -420,6 +420,19 @@ a:hover {
   margin: 0;
 }
 
+
+/* Make preview links behave like regular links on hover and focus */
+.preview-box a:hover,
+.preview-box a:focus {
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+}
+
+/* Visible focus ring for keyboard users */
+.preview-box a:focus {
+  outline: 3px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
+}
 .demo-button {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
@@ -752,6 +765,74 @@ select, .small-select {
   gap: 0.12rem;
   margin: 0 0.14rem;
 }
+.preview-box#previewThird,
+.preview-box#previewThird *:where(a, button, .svg-link, .bar-chart-bar, .saved-icon-link) {
+  /* Ensure the third preview and its interactive children have access to preview-specific colors */
+  --focus-color: var(--preview-focus, var(--focus-color));
+}
+
+/* Scope focus styles to the Focus preview so focused elements show the third color */
+#previewThird a:focus-visible,
+#previewThird button:focus-visible,
+#previewThird .svg-link:focus-visible,
+#previewThird .bar-chart-bar:focus-visible,
+#previewThird .saved-icon-link:focus-visible {
+  outline: 3px solid var(--preview-focus);
+  outline-offset: 3px;
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--preview-focus) 20%, rgba(2,6,23,0.08));
+}
+
+/* Hover state uses a softer focus tint for visual consistency */
+#previewThird a:hover,
+#previewThird button:hover,
+#previewThird .svg-link:hover,
+#previewThird .bar-chart-bar:hover,
+#previewThird .saved-icon-link:hover {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--preview-focus) 12%, rgba(2,6,23,0.06));
+}
+
+/* Make saved icons show a focus ring and slight scale on focus for screenshot clarity */
+#previewThird .saved-icon-link { display: inline-block; border-radius: 8px; }
+#previewThird .saved-icon-link:focus-visible { transform: scale(1.03); }
+
+/* Stronger rules placed late in the file to ensure they override other focus styles
+   Use both :focus and :focus-visible so mouse-applied focus (or programmatic focus)
+   also gets the visible treatment for screenshots and demos. */
+#previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus,
+#previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus-visible {
+  outline: 3px solid var(--preview-focus) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--preview-focus) 22%, rgba(2,6,23,0.10)) !important;
+}
+
+/* Specific for the preview buttons inside the third preview (higher specificity) */
+#previewThird .button-variants .btn:focus,
+#previewThird .button-variants .btn:focus-visible {
+  outline: 3px solid var(--preview-focus) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--preview-focus) 22%, rgba(2,6,23,0.10)) !important;
+}
+
+/* Additional high-contrast focus treatments to ensure visibility against dark/green backgrounds */
+#previewThird .button-variants .btn:focus, #previewThird .button-variants .btn:focus-visible {
+  border: 2px solid var(--preview-focus) !important;
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--preview-focus) 8%, transparent), transparent) !important;
+}
+
+#previewThird .bar-chart-bar:focus, #previewThird .bar-chart-bar:focus-visible {
+  border-radius: 6px; /* emphasize shape */
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--preview-focus) 25%, rgba(255,255,255,0.02)) !important;
+  transform: translateY(-2px);
+}
+
+#previewThird .saved-icon-link:focus, #previewThird .saved-icon-link:focus-visible {
+  border-radius: 10px;
+  border: 2px solid var(--preview-focus) !important;
+  background: color-mix(in srgb, var(--preview-focus) 6%, transparent) !important;
+  transform: translateY(-2px) scale(1.02);
+}
+
+
 .mini-label {
   font-size: 0.65rem;
   color: var(--muted);
@@ -815,26 +896,40 @@ select, .small-select {
   position: relative;
   will-change: transform, box-shadow;
 }
-
-/* show color code on hover/focus */
-.bar-chart-bar .bar-code {
+/* Bar code (hex / value) that appears above the bar on hover/focus */
+.bar-chart .bar-code {
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--panel-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  padding: 0.18rem 0.4rem;
-  border-radius: 6px;
   font-size: 0.72rem;
+  color: var(--text-color);
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
   white-space: nowrap;
   display: none;
   z-index: 4;
 }
-.bar-chart-bar:focus-visible .bar-code,
+
+/* Hide labels by default (they can overlap) */
+.bar-chart .bar-chart-label { display: none; }
+
+/* Reveal code and label on hover or keyboard focus */
+.bar-chart-bar:hover .bar-code,
+.bar-chart-bar:focus .bar-code,
+.bar-chart-bar:focus-within .bar-code,
 .bar-chart-bar.bar-hover .bar-code,
-.bar-chart-bar:hover .bar-code {
+.bar-chart-bar:focus-visible .bar-code {
+  display: block;
+}
+
+.bar-chart-bar:hover .bar-chart-label,
+.bar-chart-bar:focus .bar-chart-label,
+.bar-chart-bar:focus-within .bar-chart-label,
+.bar-chart-bar.bar-hover .bar-chart-label,
+.bar-chart-bar:focus-visible .bar-chart-label {
   display: block;
 }
 
@@ -862,9 +957,10 @@ select, .small-select {
   color: var(--muted);
   text-align: center;
   padding: 4px 6px;
+  display: none; /* keep hidden unless hovered/focused */
 }
 
-/* ensure label text contrasts by using panel bg text color */
+/* ensure label text contrasts by using panel bg text color when visible */
 .bar-chart-bar .bar-chart-label { color: var(--text-color); }
 
 .svg-link { display: inline-block; text-decoration: none; border-radius: 8px; }
