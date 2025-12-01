@@ -1210,22 +1210,7 @@ return picked.slice(0, count);
         third = parseCssColor(thirdText.value);
         thirdPicker.value = third.hex;
       }
-      // Adjust global page background variable based on chosen BG color
-      try {
-        const bgL = relativeLuminance(bg);
-        const root = document.documentElement;
-        // if the chosen background is dark (luminance low), use it for the page background
-        if (bgL < 0.15) {
-          // set a subtle gradient using the chosen bg as the darker stop
-          root.style.setProperty('--page-bg', `linear-gradient(180deg, ${bg.hex} 0%, color-mix(in srgb, ${bg.hex} 8%, #000000 20%))`);
-        } else if (bgL > 0.85) {
-          // very light background - use a light gradient so UI doesn't go pure white
-          root.style.setProperty('--page-bg', `linear-gradient(180deg, ${bg.hex} 0%, color-mix(in srgb, ${bg.hex} 8%, #ffffff 20%))`);
-        } else {
-          // moderate luminance - clear to default so theme backgrounds show
-          root.style.removeProperty('--page-bg');
-        }
-      } catch (e) {}
+      
     } catch (err) {
       errorBox.textContent = err.message;
       errorBox.classList.remove("hidden");
@@ -1242,8 +1227,8 @@ return picked.slice(0, count);
       try { document.documentElement.style.setProperty('--focus-color', third.hex); } catch (e) {}
     } else {
       previewThirdCard.classList.add("hidden");
-      // reset to default focus color when not enabled
-      try { document.documentElement.style.setProperty('--focus-color', ''); } catch (e) {}
+      // reset to default focus color when not enabled by removing any inline override
+      try { document.documentElement.style.removeProperty('--focus-color'); } catch (e) {}
     }
 
     // sync URL so colors are shareable
@@ -1847,8 +1832,38 @@ return picked.slice(0, count);
   if (clearBtn) clearBtn.addEventListener('click', () => { localStorage.removeItem(PALETTE_KEY); renderSavedPalette(); try { updateBarChart([fgText.value || fgPicker.value, bgText.value || bgPicker.value, (document.getElementById('enableThird') && document.getElementById('enableThird').checked) ? (thirdText.value || thirdPicker.value) : null]); } catch(e){} });
   const copyBtn = document.getElementById('copyPalette');
   if (copyBtn) copyBtn.addEventListener('click', async () => {
-    const vals = loadSavedPalette().map(i => i.value).join(', ');
-    try { await navigator.clipboard.writeText(vals); alert('Palette copied to clipboard'); } catch (e) { alert('Copy failed: ' + e); }
+    const palette = loadSavedPalette();
+    if (!palette || !palette.length) { alert('No saved colors to export'); return; }
+    // Build CSV with header: id,hex
+    const rows = ['id,hex'];
+    for (const p of palette) {
+      // escape any double quotes
+      const id = String(p.id || '').replace(/"/g, '""');
+      const hex = String(p.value || '').replace(/"/g, '""');
+      rows.push(`"${id}","${hex}"`);
+    }
+    const csv = rows.join('\n');
+    // Try copying to clipboard
+    try {
+      await navigator.clipboard.writeText(csv);
+    } catch (e) {
+      // ignore copy failure, will still trigger download
+    }
+    // Trigger file download
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'palette.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      alert('Palette exported as CSV (copied to clipboard if supported)');
+    } catch (e) {
+      alert('Export failed: ' + e);
+    }
   });
 
   // Random button handlers (local scope)

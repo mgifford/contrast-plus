@@ -20,7 +20,7 @@
         <button type="button" class="theme-toggle-button" data-theme-choice="dark">Dark</button>
       </div>
       <p>
-        Enter colors using any modern CSS color format supported by your browser. This tool evaluates WCAG&nbsp;2.x contrast ratios and APCA Lc values.
+        Enter colors using any modern CSS color format supported by your browser. This tool evaluates <a href="https://www.w3.org/TR/WCAG22/#contrast-minimum">WCAG&nbsp;2.x</a> & <a href="https://apcacontrast.com/">APCA Lc</a> contrast ratios.
       </p>
     </header>
 
@@ -35,9 +35,11 @@
             <input id="fgText" class="text-input" type="text" value="#45ad7f" autocomplete="off" aria-describedby="colorExamples">
           </label>
           <label class="field">
-            <span>Picker</span>
             <div class="picker-row">
-              <input id="fgPicker" class="color-input" type="color" value="#45ad7f">
+              <div class="mini-group">
+                <div class="mini-label">Picker</div>
+                <input id="fgPicker" class="color-input" type="color" value="#45ad7f">
+              </div>
               <div class="mini-group" aria-hidden="false">
                 <div class="mini-label">Nudge</div>
                 <button id="fgLighter" class="mini-btn" title="Make foreground darker" aria-label="Make foreground darker">+</button>
@@ -60,9 +62,11 @@
             <input id="bgText" class="text-input" type="text" value="hsl(159.43, 33.98%, 20.2%)" autocomplete="off">
           </label>
           <label class="field">
-            <span>Picker</span>
             <div class="picker-row">
-              <input id="bgPicker" class="color-input" type="color" value="hsl(159.43, 33.98%, 20.2%)">
+              <div class="mini-group">
+                <div class="mini-label">Picker</div>
+                <input id="bgPicker" class="color-input" type="color" value="hsl(159.43, 33.98%, 20.2%)">
+              </div>
               <div class="mini-group">
                 <div class="mini-label">Nudge</div>
                 <button id="bgLighter" class="mini-btn" title="Make background darker" aria-label="Make background darker">+</button>
@@ -91,9 +95,11 @@
                      value="rebeccapurple" autocomplete="off">
             </label>
             <label class="field">
-              <span>Picker</span>
               <div class="picker-row">
-                <input id="thirdPicker" class="color-input" type="color" value="#663399">
+                <div class="mini-group">
+                  <div class="mini-label">Picker</div>
+                  <input id="thirdPicker" class="color-input" type="color" value="#663399">
+                </div>
                 <div class="mini-group">
                   <div class="mini-label">Nudge</div>
                   <button id="thirdLighter" class="mini-btn" title="Make focus color darker" aria-label="Make focus color darker">+</button>

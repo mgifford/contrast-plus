@@ -66,7 +66,7 @@
   --table-border: #4b5563;
   --preview-border: #4b5563;
   --bg-page: #020617;
-  --page-bg: radial-gradient(circle at top left, #0f172a, #020617);
+  --page-bg: radial-gradient(circle at top left, #0f172a, #000000);
   --panel-bg: #020617;
   --text-color: #e5e7eb;
   --link-color: #93c5fd;
@@ -88,6 +88,7 @@
     --preview-border: #4b5563;
     --bg-page: #020617;
     --panel-bg: #020617;
+    --page-bg: radial-gradient(circle at top left, #0f172a, #000000);
     --text-color: #e5e7eb;
     --link-color: #93c5fd;
     --link-hover: #bfdbfe;
@@ -113,8 +114,8 @@
 }
 
 .theme-toggle-active {
-  background: rgba(148, 163, 184, 0.9);
-  color: #0f172a;
+  background: var(--button-bg);
+  color: var(--button-text);
 }
 
 :root {
@@ -179,7 +180,10 @@
 .btn.ghost:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
 
 /* Ensure picker random/save buttons are visible */
-.picker-random, .picker-save { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); padding: 0.25rem 0.45rem; border-radius: 6px; }
+.picker-random, .picker-save { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.25rem 0.45rem; border-radius: 6px; box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset; }
+
+.picker-save:hover { box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 10%, rgba(2,6,23,0.06)); transform: translateY(-1px); }
+.picker-save:focus-visible, .picker-save:focus { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
 }
 
@@ -197,15 +201,14 @@ body {
 
 body {
   font-family: var(--font-body);
-  background: var(--page-bg);
+  background: var(--page-bg, radial-gradient(circle at top left, #dbeafe, #f3f4f6));
   background-attachment: fixed;
   color: var(--text-color);
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
-    background: radial-gradient(circle at top left, #0f172a, #020617);
-  }
+  /* Keep the media query to allow system preference to set variables in :root
+     but avoid hard-coded body overrides so `data-theme` can control the page. */
 }
 
 a {
@@ -289,6 +292,27 @@ a:hover {
   font-size: 0.85rem;
   color: var(--muted);
   margin-bottom: 0.2rem;
+}
+
+/* When a field contains a picker-row, lay label and controls on one horizontal line */
+.field:has(.picker-row) {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+.field:has(.picker-row) span {
+  margin-bottom: 0;
+  width: 6.5rem; /* reserve space for the left label */
+  flex-shrink: 0;
+}
+
+/* Responsive: on small screens, stack picker fields vertically again */
+@media (max-width: 640px) {
+  .field:has(.picker-row) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .field:has(.picker-row) span { width: auto; }
 }
 
 .text-input {
@@ -383,6 +407,28 @@ a:hover {
 .sim-toggle:focus-visible {
   outline: 3px solid var(--focus-color);
   outline-offset: 2px;
+}
+
+/* Hover interactions that use the focus color when enabled. These are subtle tints and shadows. */
+a:hover, a:active {
+  text-decoration: underline;
+  color: var(--focus-color);
+}
+
+.btn:hover, .mini-btn:hover, .small-btn:hover, .picker-save:hover, .picker-find:hover {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 12%, rgba(2,6,23,0.06));
+  transform: translateY(-1px);
+}
+
+/* For controls inside the Focus preview, use the preview focus color for hover/tint */
+#previewThird a:hover, #previewThird button:hover, #previewThird .mini-btn:hover, #previewThird .small-btn:hover {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--preview-focus) 18%, rgba(2,6,23,0.07)) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Input focus/hover tint to show interaction affordance */
+.text-input:hover, .text-input:focus, .color-input:hover, .color-input:focus {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 8%, rgba(2,6,23,0.04));
 }
 
 @supports (color-mix(in srgb, red 50%, blue 50%)) {
@@ -754,11 +800,40 @@ select, .small-select {
 
 .small-btn:hover { background: rgba(0,0,0,0.03); }
 
+/* Ensure picker save buttons (which also carry .small-btn) remain visible and inherit picker styling */
+.small-btn.picker-save,
+.small-btn.picker-random {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset;
+}
+.small-btn.picker-save:hover,
+.small-btn.picker-random:hover {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 10%, rgba(2,6,23,0.06));
+  transform: translateY(-1px);
+}
+.small-btn.picker-save:focus-visible,
+.small-btn.picker-random:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+.mini-btn {
+  padding: 0.18rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mini-btn:hover { background: rgba(0,0,0,0.03); }
+
 /* Picker row: keep picker and save button compact and aligned */
 .picker-row {
   display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  align-items: flex-start; /* top-align labels and controls */
+  gap: 0.32rem;
 }
 
 .mini-group {
@@ -768,6 +843,11 @@ select, .small-select {
   gap: 0.12rem;
   margin: 0 0.14rem;
 }
+
+/* Ensure the Picker mini-group aligns its label left above the input (no large gap) */
+.picker-row .mini-group:first-child { align-items: flex-start; margin-left: 0; }
+
+.picker-row .mini-group:first-child .mini-label { margin-left: 2px; }
 .preview-box#previewThird,
 .preview-box#previewThird *:where(a, button, .svg-link, .bar-chart-bar, .saved-icon-link) {
   /* Ensure the third preview and its interactive children have access to preview-specific colors */
@@ -779,7 +859,12 @@ select, .small-select {
 #previewThird button:focus-visible,
 #previewThird .svg-link:focus-visible,
 #previewThird .bar-chart-bar:focus-visible,
-#previewThird .saved-icon-link:focus-visible {
+#previewThird .saved-icon-link:focus-visible,
+#previewThird a:focus:not(:focus-visible),
+#previewThird button:focus:not(:focus-visible),
+#previewThird .svg-link:focus:not(:focus-visible),
+#previewThird .bar-chart-bar:focus:not(:focus-visible),
+#previewThird .saved-icon-link:focus:not(:focus-visible) {
   outline: 3px solid var(--preview-focus);
   outline-offset: 3px;
   box-shadow: 0 8px 28px color-mix(in srgb, var(--preview-focus) 20%, rgba(2,6,23,0.08));
@@ -802,7 +887,8 @@ select, .small-select {
    Use both :focus and :focus-visible so mouse-applied focus (or programmatic focus)
    also gets the visible treatment for screenshots and demos. */
 #previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus,
-#previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus-visible {
+#previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus-visible,
+#previewThird :is(a, button, .svg-link, .bar-chart-bar, .saved-icon-link):focus:not(:focus-visible) {
   outline: 3px solid var(--preview-focus) !important;
   outline-offset: 3px !important;
   box-shadow: 0 10px 30px color-mix(in srgb, var(--preview-focus) 22%, rgba(2,6,23,0.10)) !important;
@@ -821,9 +907,22 @@ select, .small-select {
   border: 2px solid var(--preview-focus) !important;
   background-image: linear-gradient(180deg, color-mix(in srgb, var(--preview-focus) 8%, transparent), transparent) !important;
 }
-/* Global default focus-visible outline rule: width & offset only, default color used by browser/user-agent */
+/* Global default focus-visible outline: consistent width + offset using theme focus color */
 :focus-visible {
-  outline: 3px solid;
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Ensure primary interactive controls use the same focus-visible treatment */
+.btn:focus-visible,
+.mini-btn:focus-visible,
+.small-btn:focus-visible,
+.picker-save:focus-visible,
+.sim-toggle:focus-visible,
+.swatch button:focus-visible,
+a:focus-visible,
+.svg-link:focus-visible {
+  outline: 3px solid var(--focus-color);
   outline-offset: 2px;
 }
 
@@ -878,6 +977,11 @@ select, .small-select {
   color: var(--button-text);
   border: 1px solid transparent;
   border-radius: 6px;
+}
+.picker-find:focus-visible, .picker-find:focus {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--focus-color) 18%, rgba(2,6,23,0.06));
 }
 
 .color-input {
@@ -975,6 +1079,33 @@ select, .small-select {
 .svg-container { width: 64px; height: 64px; margin-top: 8px; display: flex; align-items: center; justify-content: center; }
 .svg-link:focus-visible .svg-container, .svg-link:hover .svg-container { box-shadow: 0 0 0 6px rgba(59,130,246,0.12); border-radius: 8px; transform: translateY(-2px); }
 .svg-link:focus-visible .svg-container { box-shadow: 0 0 0 6px var(--focus-color, rgba(59,130,246,0.18)); }
+
+/* Enforce consistent focus outline and hover styles for all interactive controls */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Apply hover affordance to all buttons, including plain <button> elements */
+button:hover,
+.btn:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover {
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 12%, rgba(2,6,23,0.06));
+  transform: translateY(-1px);
+}
+
+/* Use preview-focused hover inside the Focus preview */
+#previewThird button:hover,
+#previewThird a:hover {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--preview-focus) 18%, rgba(2,6,23,0.07)) !important;
+  transform: translateY(-1px) !important;
+}
 
 /* saved palette icon hover/focus micro animation */
 .palette-item .svg-link svg {
