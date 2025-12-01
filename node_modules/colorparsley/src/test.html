@@ -1,0 +1,59 @@
+<!DOCTYPE html><head>
+<base lang="en-US" title="CoLoR PaRsLeY TEST">
+<title>CoLoR PaRsLeY TEST</title>
+</head>
+<body style="margin: 2em; font-family: sans-serif; font-size: 1.2em; background: #429; color:#eee;">
+<h1>CoLoR PaRsLeY Script Test 0.1.8</h1>
+<h3>Usage:</h3>
+
+<code>colorParsley()</code> takes any string or int and parses it to an RGB color array if it's parsable. Returns black [0,0,0,,false,parsleyError] if it can't be parsed.</p>
+<div id="test">Enable Javascript </div>
+</body>
+
+<script type="module">
+import { colorParsley, colorToHex, colorToRGB } from './colorparsley.js';
+
+let outputText = document.getElementById('test');
+
+outputText.innerHTML = '<h3>TEST COLORS</h3>';
+
+outputText.innerHTML += '<p>Colors may be a hex string, a named color, an rgb(), or just a number</p>'
+
+let colorObject = {r: 123, g: 77, b: 200, fred: 'hello', nothing: 0,};
+
+let color0='rgba(0,0,0,0)', color1 = '#123456cc', color2 = 'cadetblue', color3 = 'rgb(170.0, 187.0, 205.0,0.7)', color4 = 0x808080, color5 = 'hsl(112,22.8%,66.5%,0.8)', color6 = '123,', color7 = 'DEF', color10 = 'color("display-p3" 0.234 0.876 0.656 / 0.8)', color11 = '#abcd', color12 = 'rgba(123.5,74.2,255 0.8)', color14 = 'rgba(170.2,187.3,203.7,0.8)';
+
+outputText.innerHTML +='<pre style="tab-size: 38;">color 0: '
+	 + color0 + '  \t array: [' + colorParsley(color0) + ']'
+   + ' <br>color 1: ' + color1 + '  \t array: [' + colorParsley(color1) + ']'
+	 + ' <br>color 2: ' + color2 + '  \t array: [' + colorParsley(color2) + ']'
+	 + ' <br>color 3: ' + color3 + '\t array: [' + colorParsley(color3) + ']'
+	 + ' <br>color 4: ' + color4 + '(0x808080)  \t array: [' + colorParsley(color4) + ']'
+	 + ' <br>color 5: ' + color5 + '  \t array: [' + colorParsley(color5) + ']'
+	 + ' <br>color 6: ' + color6 + '  \t array: [' + colorParsley(color6) + ']'
+	 + ' <br>color 7: ' + color7 + '  \t array: [' + colorParsley(color7) + ']'
+	 + ' <br>color 8: ' + '#fa' + '   \t array: [' + colorParsley('#fa') + ']'
+	 + ' <br>color 9: ' + '60%' + '   \t array: [' + colorParsley('60%') + ']'
+	 + ' <br>color 9b: ' + 'rgb(77%,87%,46%)' + '   \t array: [' + colorParsley('rgb(77%,87%,46%)') + ']'
+	 + ' <br>color 9c: ' + 'deeppink' + '   \t array: [' + colorParsley('deeppink') + ']'
+	 + ' <br>color 9cc: ' + '#ff1493' + '   \t array: [' + colorParsley('#ff1493') + ']'
+	 + ' <br>color10: <br> ' + color10 + ' array: [' + colorParsley(color10) + ']'
+	 + ' <br>colorObj: ' + colorObject + '   \t array: [' + colorParsley(colorObject) + ']'
+	 + ' <br>ToHex: ' + color3 + '\t string: ' + colorToHex(colorParsley(color3)) 
+	 + ' <br>ToHex: ' + 'ABC' + '   \t string: ' + colorToHex(colorParsley('abc')) 
+	 + ' <br>ToHEX: ' + color10 + '   string: ' + colorToHex(colorParsley(color10))
+	 + ' <br>ToHEX: ' + color11 + '   \t string: ' + colorToHex(colorParsley(color11))
+	 + ' <br>ToHEX: ' + color12 + '   \t string: ' + colorToHex(colorParsley(color12))
+	 + ' <br>ToHEX: ' + color14 + '   \t string: ' + colorToHex(colorParsley(color14))
+	 + ' <br>ToRGB: ' + color10 + '  string: ' + colorToRGB(colorParsley(color10))
+	 + ' <br>ToRGB: ' + color11 + '   \t string: ' + colorToRGB(colorParsley(color11))
+	 + ' <br>ToRGB: ' + color4 + '   \t string: ' + colorToRGB(colorParsley(color4)) 
+	 + ' <br>ToRGB: ' + 'abc' + '   \t string: ' + colorToRGB(colorParsley('abc')) 
+	 + ' <br><br>Fail: ' + 'rgb(123,88%,79)' + '   \t array: [' + colorParsley('rgb(123,88%,79)') + ']'
+	 + ' <br>Fail: ' + 'hello' + '   \t array: [' + colorParsley('hello') + ']'
+	 + ' <br>Fail: ' + '{fred: 1, bob: 20, grace: 9,}' + '\t array: [' + colorParsley({fred: 1, bob: 20, alice: 9,}) + ']'
+	 ;
+</script>
+
+
+

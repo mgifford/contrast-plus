@@ -391,7 +391,7 @@ function setupContrastTool() {
   /**
    * Foreground palette: keep hue/saturation, vary lightness.
    * candidate is treated as TEXT against fixed background.
-   * Score tries to keep both color and metrics near threshold.
+   * Only returns candidates that pass BOTH WCAG and APCA thresholds.
    */
   function findForegroundPalette(baseTextRgb, bgRgb, wcagThreshold, apcaThreshold, count) {
     const baseHsl = rgbToHsl(baseTextRgb);
@@ -399,13 +399,15 @@ function setupContrastTool() {
 
     const candidates = [];
 
+    // Try keeping hue/sat constant, varying lightness
     for (let l = 0.02; l <= 0.98 + 1e-9; l += 0.02) {
       const candidateRgb = hslToRgb({ h, s, l });
 
       const ratio = wcagContrast(candidateRgb, bgRgb);
       const lc = apcaLc(candidateRgb, bgRgb); // text = candidate
       const wcagPass = ratio >= wcagThreshold;
-      const apcaPass = !Number.isNaN(lc) ? Math.abs(lc) >= apcaThreshold : true;
+      const apcaPass = !Number.isNaN(lc) && Math.abs(lc) >= apcaThreshold;
+
       if (!wcagPass || !apcaPass) continue;
 
       const score = foregroundCandidateScore(baseL, ratio, lc, wcagThreshold, apcaThreshold, l);
@@ -419,6 +421,27 @@ function setupContrastTool() {
       });
     }
 
+    // If we don't have enough candidates, try modest saturation adjustments
+    if (candidates.length < count) {
+      for (const sAdj of [0.9, 0.8, 1.1]) {
+        const adjustedS = clamp(s * sAdj, 0, 1);
+        for (let l = 0.02; l <= 0.98 + 1e-9; l += 0.02) {
+          const candidateRgb = hslToRgb({ h, s: adjustedS, l });
+          const ratio = wcagContrast(candidateRgb, bgRgb);
+          const lc = apcaLc(candidateRgb, bgRgb);
+          const wcagPass = ratio >= wcagThreshold;
+          const apcaPass = !Number.isNaN(lc) && Math.abs(lc) >= apcaThreshold;
+
+          if (!wcagPass || !apcaPass) continue;
+
+          const score = foregroundCandidateScore(baseL, ratio, lc, wcagThreshold, apcaThreshold, l);
+          candidates.push({ rgb: candidateRgb, hex: rgbToHex(candidateRgb), ratio, lc, score });
+        }
+      }
+    }
+
+    if (!candidates.length) return [];
+
     candidates.sort((a, b) => a.score - b.score);
     return candidates.slice(0, count);
   }
@@ -427,6 +450,7 @@ function setupContrastTool() {
    * Background palette: try multiple passes to stay close to base hue/sat,
    * but relax saturation and hue slightly if needed. Score prefers
    * combinations that are near thresholds for both WCAG and APCA.
+   * Strict mode: only WCAG+APCA combinations are accepted.
    */
   function findBackgroundPalette(baseBgRgb, fgRgb, wcagThreshold, apcaThreshold, count) {
     const baseHsl = rgbToHsl(baseBgRgb);
@@ -439,13 +463,15 @@ function setupContrastTool() {
         const h = ((baseH + hOff) % 1 + 1) % 1;
         for (const sScale of satScales) {
           const s = clamp(baseS * sScale, 0, 1);
+          
           for (let l = 0.02; l <= 0.98 + 1e-9; l += 0.02) {
             const candidateRgb = hslToRgb({ h, s, l });
 
             const ratio = wcagContrast(fgRgb, candidateRgb);
             const lc = apcaLc(fgRgb, candidateRgb); // text = fg, bg = candidate
             const wcagPass = ratio >= wcagThreshold;
-            const apcaPass = !Number.isNaN(lc) ? Math.abs(lc) >= apcaThreshold : true;
+            const apcaPass = !Number.isNaN(lc) && Math.abs(lc) >= apcaThreshold;
+            
             if (!wcagPass || !apcaPass) continue;
 
             const deltaH = Math.abs(hOff);
@@ -460,25 +486,59 @@ function setupContrastTool() {
               score,
             });
 
-            if (candidates.length >= count * 4) return;
+            if (candidates.length >= count * 10) return; // Early exit if we have enough
           }
-          if (candidates.length >= count * 4) return;
         }
-        if (candidates.length >= count * 4) return;
       }
     }
 
-    // Pass 1: same hue, same saturation.
-    tryPass([0], [1]);
+    // Pass 1: Tight search around base color
+    tryPass([0], [1, 0.95, 0.9]);
 
-    // Pass 2: same hue, slightly reduced saturation (wash out).
+    // Pass 2: Same hue, broader saturation range
     if (candidates.length < count) {
-      tryPass([0], [0.9, 0.8, 0.7]);
+      tryPass([0], [1, 0.9, 0.8, 0.7, 0.6]);
     }
 
-    // Pass 3: small hue shifts around the original, modest saturation.
+    // Pass 3: Small hue shifts
     if (candidates.length < count) {
-      tryPass([0.03, -0.03, 0.06, -0.06, 0.09, -0.09], [1, 0.9]);
+      tryPass([0.03, -0.03, 0.06, -0.06, 0.09, -0.09], [1, 0.9, 0.8]);
+    }
+
+    // Pass 4: Broader hue exploration
+    if (candidates.length < count) {
+      tryPass([0.12, -0.12, 0.15, -0.15], [1, 0.9, 0.8, 0.7]);
+    }
+
+    // Pass 5: Wide hue exploration with full saturation range
+    if (candidates.length < count) {
+      tryPass([0.2, -0.2, 0.25, -0.25], [1, 0.8, 0.6, 0.4]);
+    }
+
+    // Pass 6: Extreme hue shifts (almost opposite)
+    if (candidates.length < count) {
+      tryPass([0.35, -0.35, 0.4, -0.4], [1, 0.7, 0.5]);
+    }
+
+    // Pass 7: Very broad search across full range if still not enough
+    if (candidates.length < count) {
+      for (let h = 0; h <= 1; h += 0.1) {
+        for (let s of [1, 0.8, 0.6, 0.4]) {
+          for (let l = 0.02; l <= 0.98; l += 0.05) {
+            const candidateRgb = hslToRgb({ h, s, l });
+            const ratio = wcagContrast(fgRgb, candidateRgb);
+            const lc = apcaLc(fgRgb, candidateRgb);
+            const wcagPass = ratio >= wcagThreshold;
+            const apcaPass = !Number.isNaN(lc) && Math.abs(lc) >= apcaThreshold;
+            
+            if (!wcagPass || !apcaPass) continue;
+
+            const score = backgroundCandidateScore(baseL, ratio, lc, wcagThreshold, apcaThreshold, l, Math.abs(h - baseH), Math.abs(s - baseS));
+            
+            candidates.push({ rgb: candidateRgb, hex: rgbToHex(candidateRgb), ratio, lc, score });
+          }
+        }
+      }
     }
 
     if (!candidates.length) {
@@ -487,41 +547,31 @@ function setupContrastTool() {
 
     candidates.sort((a, b) => a.score - b.score);
 
-// Enforce minimum lightness spacing so backgrounds are perceptibly different.
-const picked = [];
-const minDeltaL = 0.08;
+    // Enforce minimum lightness spacing so backgrounds are perceptibly different.
+    const picked = [];
+    const minDeltaL = 0.08;
 
-for (const c of candidates) {
-  if (picked.length === 0) {
-    picked.push(c);
-  } else {
-    const tooClose = picked.some(p => {
-      const dl = Math.abs((rgbToHsl(p.rgb).l) - (rgbToHsl(c.rgb).l));
-      return dl < minDeltaL;
-    });
-    if (!tooClose) picked.push(c);
+    for (const c of candidates) {
+      if (picked.length === 0) {
+        picked.push(c);
+      } else {
+        const tooClose = picked.some(p => {
+          const dl = Math.abs((rgbToHsl(p.rgb).l) - (rgbToHsl(c.rgb).l));
+          return dl < minDeltaL;
+        });
+        if (!tooClose) picked.push(c);
+      }
+      if (picked.length >= count) break;
+    }
+
+    return picked.slice(0, count);
   }
-  if (picked.length >= count) break;
-}
-
-
-
-// Top up if needed
-if (picked.length < count) {
-  for (const c of candidates) {
-    if (picked.includes(c)) continue;
-    picked.push(c);
-    if (picked.length >= count) break;
-  }
-}
-
-return picked.slice(0, count);
-}
 
   /**
    * Third/focus palette: treat candidate as FOCUS color, evaluated against background
    * and extra constraints (e.g., 3:1 vs foreground). Score prefers near-threshold
    * combinations that minimally change lightness.
+   * Strict mode: only WCAG+APCA combinations are accepted.
    */
   function findFocusPalette(baseFocusRgb, bgRgb, wcagThreshold, apcaThreshold, count, extraCheck) {
     const baseHsl = rgbToHsl(baseFocusRgb);
@@ -529,15 +579,16 @@ return picked.slice(0, count);
 
     const candidates = [];
 
+    // First try: keep hue/saturation, vary lightness
     for (let l = 0.02; l <= 0.98 + 1e-9; l += 0.02) {
       const candidateRgb = hslToRgb({ h, s, l });
 
       const ratioBg = wcagContrast(candidateRgb, bgRgb);
       const lcBg = apcaLc(candidateRgb, bgRgb);
       const wcagPass = ratioBg >= wcagThreshold;
-      const apcaPass = !Number.isNaN(lcBg) ? Math.abs(lcBg) >= apcaThreshold : true;
-      if (!wcagPass || !apcaPass) continue;
+      const apcaPass = !Number.isNaN(lcBg) && Math.abs(lcBg) >= apcaThreshold;
 
+      if (!wcagPass || !apcaPass) continue;
       if (extraCheck && !extraCheck(candidateRgb)) continue;
 
       const score = focusCandidateScore(baseL, ratioBg, lcBg, wcagThreshold, apcaThreshold, l);
@@ -552,34 +603,46 @@ return picked.slice(0, count);
       });
     }
 
+    // Second try: if not enough, also try saturation adjustments
+    if (candidates.length < count) {
+      for (const sAdj of [0.9, 0.8, 1.1]) {
+        const adjustedS = clamp(s * sAdj, 0, 1);
+        for (let l = 0.02; l <= 0.98 + 1e-9; l += 0.02) {
+          const candidateRgb = hslToRgb({ h, s: adjustedS, l });
+          const ratioBg = wcagContrast(candidateRgb, bgRgb);
+          const lcBg = apcaLc(candidateRgb, bgRgb);
+          const wcagPass = ratioBg >= wcagThreshold;
+          const apcaPass = !Number.isNaN(lcBg) && Math.abs(lcBg) >= apcaThreshold;
+
+          if (!wcagPass || !apcaPass) continue;
+          if (extraCheck && !extraCheck(candidateRgb)) continue;
+
+          const score = focusCandidateScore(baseL, ratioBg, lcBg, wcagThreshold, apcaThreshold, l);
+          candidates.push({ rgb: candidateRgb, hex: rgbToHex(candidateRgb), ratio: ratioBg, lc: lcBg, score, l });
+        }
+      }
+    }
+
+    if (!candidates.length) return [];
+
     candidates.sort((a, b) => a.score - b.score);
 
-// Similar spacing for focus colors so the focus ring options are distinct.
-const picked = [];
-const minDeltaL = 0.08;
+    // Similar spacing for focus colors so the focus ring options are distinct.
+    const picked = [];
+    const minDeltaL = 0.08;
 
-for (const c of candidates) {
-  if (picked.length === 0) {
-    picked.push(c);
-  } else {
-    const tooClose = picked.some(p => Math.abs(p.l - c.l) < minDeltaL);
-    if (!tooClose) picked.push(c);
+    for (const c of candidates) {
+      if (picked.length === 0) {
+        picked.push(c);
+      } else {
+        const tooClose = picked.some(p => Math.abs(p.l - c.l) < minDeltaL);
+        if (!tooClose) picked.push(c);
+      }
+      if (picked.length >= count) break;
+    }
+
+    return picked.slice(0, count);
   }
-  if (picked.length >= count) break;
-}
-
-  
-
-if (picked.length < count) {
-  for (const c of candidates) {
-    if (picked.includes(c)) continue;
-    picked.push(c);
-    if (picked.length >= count) break;
-  }
-}
-
-return picked.slice(0, count);
-}
 
   function formatRatio(value) {
     if (!isFinite(value)) return "n/a";
@@ -1306,62 +1369,12 @@ return picked.slice(0, count);
         const bgPalette = findBackgroundPalette(bg, fg, wcagThreshold, apcaThreshold, 5);
 
 
-      // Fallback: if no nearby foreground colors were found (likely due to APCA or search
-      // constraints), generate a few generic WCAG-only suggestions so designers always
-      // see some alternatives.
+      // Diagnostic message: if no nearby foreground colors were found, explain why
       if (!fgPalette.length) {
-        const fallback = [];
-        const baseHsl = rgbToHsl(fg);
-        const targetLs = [0.15, 0.3, 0.5, 0.7, 0.9];
-        for (const l of targetLs) {
-          const cand = hslToRgb({ h: baseHsl.h, s: baseHsl.s, l });
-          const ratio = wcagContrast(cand, bg);
-          if (ratio >= wcagThreshold) {
-            fallback.push({ rgb: cand, hex: rgbToHex(cand), ratio, lc: apcaLc(cand, bg) });
-          }
-        }
-        if (!fallback.length) {
-          // As an absolute last resort, try black/white.
-          [ {hex: "#000000"}, {hex: "#FFFFFF"} ].forEach(c => {
-            const candRgb = parseCssColor(c.hex);
-            const ratio = wcagContrast(candRgb, bg);
-            if (ratio >= wcagThreshold) {
-              fallback.push({ rgb: candRgb, hex: c.hex, ratio, lc: apcaLc(candRgb, bg) });
-            }
-          });
-        }
-        if (fallback.length) {
-          fallback.forEach(sug => {
-            const swatch = document.createElement("div");
-            swatch.className = "swatch";
-
-            const colorBox = document.createElement("div");
-            colorBox.className = "swatch-color";
-            colorBox.style.backgroundColor = sug.hex;
-
-            const label = document.createElement("div");
-            label.className = "swatch-label";
-            label.textContent =
-              `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
-
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.textContent = "Use as foreground";
-            btn.addEventListener("click", () => {
-              fgText.value = sug.hex;
-              fgPicker.value = sug.hex;
-              updateAll();
-            });
-
-            swatch.appendChild(colorBox);
-            swatch.appendChild(label);
-            swatch.appendChild(btn);
-            fgSuggestions.appendChild(swatch);
-          });
-          parts.push("Foreground options were widened to use WCAG-only candidates so that at least some suggestions are always available.");
-        } else {
-          parts.push("No nearby foreground colors found that satisfy thresholds by adjusting lightness only.");
-        }
+        const fgMsg = "The foreground color needs to be adjusted to meet the APCA Lc target. No nearby lightness adjustments alone can satisfy both WCAG and APCA requirements.";
+        parts.push(fgMsg);
+        const fgStatusEl = document.getElementById('fgSuggestionStatus');
+        if (fgStatusEl) fgStatusEl.textContent = fgMsg;
       } else {
         fgPalette.forEach(sug => {
           const swatch = document.createElement("div");
@@ -1390,62 +1403,15 @@ return picked.slice(0, count);
           fgSuggestions.appendChild(swatch);
         });
 
-        parts.push(`Suggested ${fgPalette.length} foreground alternatives that stay close in hue and saturation and near the chosen thresholds.`);
+        // parts.push(`Suggested ${fgPalette.length} foreground alternatives that stay close in hue and saturation and near the chosen thresholds.`);
       }
 
 
         if (!bgPalette.length) {
-          const fallbackBg = [];
-          const baseHslBg = rgbToHsl(bg);
-          const targetLsBg = [0.15, 0.3, 0.5, 0.7, 0.9];
-          for (const l of targetLsBg) {
-            const cand = hslToRgb({ h: baseHslBg.h, s: baseHslBg.s, l });
-            const ratio = wcagContrast(fg, cand);
-            if (ratio >= wcagThreshold) {
-              fallbackBg.push({ rgb: cand, hex: rgbToHex(cand), ratio, lc: apcaLc(fg, cand) });
-            }
-          }
-          if (!fallbackBg.length) {
-            [ {hex: "#000000"}, {hex: "#FFFFFF"} ].forEach(c => {
-              const candRgb = parseCssColor(c.hex);
-              const ratio = wcagContrast(fg, candRgb);
-              if (ratio >= wcagThreshold) {
-                fallbackBg.push({ rgb: candRgb, hex: c.hex, ratio, lc: apcaLc(fg, candRgb) });
-              }
-            });
-          }
-          if (fallbackBg.length) {
-            fallbackBg.forEach(sug => {
-              const swatch = document.createElement("div");
-              swatch.className = "swatch";
-
-              const colorBox = document.createElement("div");
-              colorBox.className = "swatch-color";
-              colorBox.style.backgroundColor = sug.hex;
-
-              const label = document.createElement("div");
-              label.className = "swatch-label";
-              label.textContent = `${sug.hex} · ${formatRatio(sug.ratio)} · APCA ${formatLc(sug.lc)}`;
-
-              const btn = document.createElement("button");
-              btn.type = "button";
-              btn.textContent = "Use as background";
-              btn.addEventListener("click", () => {
-                bgText.value = sug.hex;
-                bgPicker.value = sug.hex;
-                updateAll();
-              });
-
-              swatch.appendChild(colorBox);
-              swatch.appendChild(label);
-              swatch.appendChild(btn);
-              bgSuggestions.appendChild(swatch);
-            });
-
-            parts.push("Background options were widened to use WCAG-only candidates so that at least some suggestions are always available.");
-          } else {
-            parts.push("No nearby background colors found that satisfy thresholds by adjusting lightness, saturation, and hue within a narrow range.");
-          }
+          const bgMsg = "The foreground color needs to be adjusted to meet the APCA Lc target. No nearby background adjustments can satisfy both WCAG and APCA requirements against the current foreground.";
+          parts.push(bgMsg);
+          const bgStatusEl = document.getElementById('bgSuggestionStatus');
+          // if (bgStatusEl) bgStatusEl.textContent = bgMsg;
         } else {
           bgPalette.forEach(sug => {
             const swatch = document.createElement("div");
@@ -1521,7 +1487,7 @@ return picked.slice(0, count);
 
           parts.push(`Suggested ${thirdPalette.length} focus color alternatives that pass thresholds, meet the 3 to 1 focus requirement, and stay close to the original focus color.`);
         } else {
-          parts.push("No nearby focus colors found that satisfy both thresholds and the 3 to 1 focus requirement by adjusting lightness only.");
+          parts.push("The focus color needs to be adjusted to meet the APCA Lc target. No nearby lightness adjustments alone can satisfy both WCAG and APCA requirements with the 3 to 1 focus constraint.");
         }
         // If focus still fails, suggest a computed focus color
         if (!thirdPalette.length || !focusPass) {

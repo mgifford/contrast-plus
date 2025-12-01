@@ -1,0 +1,9 @@
+{
+  "name": "contrast-plus-scripts",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "apca-w3": "^0.1.9"
+  }
+}

@@ -48,8 +48,6 @@
 
 /* Ensure ghost has an exposed focus state used for the "Focus states exposed" preview */
 .btn.ghost:focus-visible {
-  outline: 3px solid var(--focus-color);
-  outline-offset: 3px;
   box-shadow: 0 4px 18px rgba(0,0,0,0.08);
   color: var(--text-color);
 }
@@ -173,17 +171,18 @@
 }
 
 .btn { background: var(--button-bg); color: var(--button-text); border-color: transparent; }
-.btn:hover { background: var(--button-bg-hover); }
-.btn:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
+.btn:hover { background: var(--button-bg-hover); box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-2px); }
+.btn:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
 .btn.ghost { background: transparent; color: var(--text-color); border: 1px solid var(--border-color); }
-.btn.ghost:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 3px; }
+.btn.ghost:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.btn.ghost:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
 /* Ensure picker random/save buttons are visible */
 .picker-random, .picker-save { background: var(--panel-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 0.25rem 0.45rem; border-radius: 6px; box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset; }
 
-.picker-save:hover { box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 10%, rgba(2,6,23,0.06)); transform: translateY(-1px); }
-.picker-save:focus-visible, .picker-save:focus { outline: 3px solid var(--focus-color); outline-offset: 2px; }
+.picker-save:hover { box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 10%, rgba(2,6,23,0.06)); transform: translateY(-2px); }
+.picker-save:focus-visible, .picker-save:focus { outline: 3px solid var(--focus-color); outline-offset: 2px; box-shadow: 0 6px 18px color-mix(in srgb, var(--focus-color) 10%, rgba(2,6,23,0.06)); }
 
 }
 
@@ -235,7 +234,8 @@ a:hover {
 .skip-link:focus-visible {
   transform: translateY(0);
   outline: 3px solid var(--focus-color);
-  outline-offset: 3px;
+  outline-offset: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
 
 .page {
@@ -422,8 +422,7 @@ a:hover, a:active {
 
 /* For controls inside the Focus preview, use the preview focus color for hover/tint */
 #previewThird a:hover, #previewThird button:hover, #previewThird .mini-btn:hover, #previewThird .small-btn:hover {
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--preview-focus) 18%, rgba(2,6,23,0.07)) !important;
-  transform: translateY(-1px) !important;
+
 }
 
 /* Input focus/hover tint to show interaction affordance */
@@ -473,15 +472,9 @@ a:hover, a:active {
 /* Make preview links behave like regular links on hover and focus */
 .preview-box a:hover,
 .preview-box a:focus {
-  text-decoration-line: underline;
-  text-decoration-style: solid;
+
 }
 
-/* Visible focus ring for keyboard users */
-.preview-box a:focus {
-  outline: 3px solid rgba(255,255,255,0.12);
-  outline-offset: 2px;
-}
 .demo-button {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
@@ -777,9 +770,9 @@ select, .small-select {
   box-shadow: 0 3px 8px var(--raised-shadow), inset 0 3px 6px color-mix(in srgb, rgba(0,0,0,0.18), var(--raised-bg) 10%);
 }
 
-/* Ensure hover and focus are visible for these preview buttons */
-.button-variants .btn:focus-visible, .button-variants .btn:hover { outline: none; filter: brightness(0.95); }
-.button-variants .btn:focus-visible { box-shadow: 0 0 0 3px var(--focus-color); }
+/* Ensure hover and focus are visible for these preview buttons (except in previewThird which has custom focus styles) */
+:not(#previewThird) .button-variants .btn:focus-visible, .button-variants .btn:hover { outline: none; filter: brightness(0.95); }
+:not(#previewThird) .button-variants .btn:focus-visible { box-shadow: 0 0 0 3px var(--focus-color); }
 
 .page-footer {
   font-size: 0.8rem;
@@ -855,6 +848,9 @@ select, .small-select {
 }
 
 /* Scope focus styles to the Focus preview so focused elements show the third color */
+#previewThird .btn,
+#previewThird .bar-chart-bar,
+#previewThird .svg-link,
 #previewThird a:focus-visible,
 #previewThird button:focus-visible,
 #previewThird .svg-link:focus-visible,
@@ -1047,13 +1043,11 @@ a:focus-visible,
 
 .bar-focus-highlight {
   box-shadow: 0 8px 20px rgba(0,0,0,0.18), 0 0 0 4px rgba(0,0,0,0.06) inset;
-  transform: translateY(-8px) scale(1.06);
   border: 2px solid rgba(255,255,255,0.06);
 }
 
 .bar-chart-bar:focus-visible,
 .bar-chart-bar.bar-hover {
-  transform: translateY(-6px) scale(1.02);
   box-shadow: 0 8px 20px rgba(12, 12, 12, 0.12);
 }
 
@@ -1061,7 +1055,6 @@ a:focus-visible,
 #previewThirdCard .bar-chart-bar.bar-hover {
   outline: 3px solid var(--focus-color, rgba(59,130,246,0.9));
   outline-offset: 3px;
-  transform: translateY(-8px) scale(1.04);
 }
 
 .bar-chart-label {
@@ -1103,8 +1096,7 @@ input[type="submit"]:hover {
 /* Use preview-focused hover inside the Focus preview */
 #previewThird button:hover,
 #previewThird a:hover {
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--preview-focus) 18%, rgba(2,6,23,0.07)) !important;
-  transform: translateY(-1px) !important;
+
 }
 
 /* saved palette icon hover/focus micro animation */

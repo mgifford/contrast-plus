@@ -254,17 +254,26 @@
       </p>
 
       <div id="suggestionBox" class="suggestion-box">
+        <div class="suggest-controls small">
+          <label class="field checkbox-field">
+            <input id="allowWcagOnly" type="checkbox">
+            <span>Allow WCAG-only suggestions (ignore APCA target)</span>
+          </label>
+        </div>
         <div id="fgSuggestionBlock" class="suggest-block">
           <h3>Adjust foreground (keep background)</h3>
           <div id="fgSuggestions" class="swatches"></div>
+          <p id="fgSuggestionStatus" class="small muted" aria-live="polite"></p>
         </div>
         <div id="bgSuggestionBlock" class="suggest-block">
           <h3>Adjust background (keep foreground)</h3>
           <div id="bgSuggestions" class="swatches"></div>
+          <p id="bgSuggestionStatus" class="small muted" aria-live="polite"></p>
         </div>
         <div id="thirdSuggestionBlock" class="suggest-block hidden">
           <h3>Third or focus color on background</h3>
           <div id="thirdSuggestions" class="swatches"></div>
+          <p id="thirdSuggestionStatus" class="small muted" aria-live="polite"></p>
         </div>
         <p class="small" id="suggestionStatus"></p>
       </div>
