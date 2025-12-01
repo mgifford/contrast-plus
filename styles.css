@@ -818,6 +818,11 @@ select, .small-select {
   border: 2px solid var(--preview-focus) !important;
   background-image: linear-gradient(180deg, color-mix(in srgb, var(--preview-focus) 8%, transparent), transparent) !important;
 }
+/* Global default focus-visible outline rule: width & offset only, default color used by browser/user-agent */
+:focus-visible {
+  outline: 3px solid;
+  outline-offset: 2px;
+}
 
 #previewThird .bar-chart-bar:focus, #previewThird .bar-chart-bar:focus-visible {
   border-radius: 6px; /* emphasize shape */
