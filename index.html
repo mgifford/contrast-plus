@@ -371,6 +371,20 @@ if (bskyPostId !== "null") {
         if it fails to load, APCA results show <code>n/a</code>. Color simulations are approximate
         and for visual exploration only.
       </p>
+
+
+<!-- Bluesky Footer -->
+<meta data-bsky-post-id="${post.bskyPostId}" />
+<section class="post__likes" data-bsky-container>
+  <h3 class="post__likesTitle">
+    🦋 <span data-bsky-likes-count></span> likes on Bluesky
+  </h3>
+  <a class="post__likesCta" href="https://bsky.app/profile/{handle}/post/${postId}" target="_blank">
+	  Like this post on Bluesky to see your face on this page
+  </a>
+  <ul data-bsky-likes class="post__likesList"></ul>
+</section>
+		
     </footer>
   </main>
 
@@ -400,19 +414,6 @@ if (bskyPostId !== "null") {
       </filter>
     </defs>
   </svg>
-
-<meta data-bsky-post-id="${post.bskyPostId}" />
-
-<!-- Bluesky Footer -->
-<section class="post__likes" data-bsky-container>
-  <h3 class="post__likesTitle">
-    🦋 <span data-bsky-likes-count></span> likes on Bluesky
-  </h3>
-  <a class="post__likesCta" href="https://bsky.app/profile/{handle}/post/${postId}" target="_blank">
-	  Like this post on Bluesky to see your face on this page
-  </a>
-  <ul data-bsky-likes class="post__likesList"></ul>
-</section>
   
   <script type="module" src="app.js"></script>
 </body>
