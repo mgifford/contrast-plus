@@ -1210,6 +1210,22 @@ return picked.slice(0, count);
         third = parseCssColor(thirdText.value);
         thirdPicker.value = third.hex;
       }
+      // Adjust global page background variable based on chosen BG color
+      try {
+        const bgL = relativeLuminance(bg);
+        const root = document.documentElement;
+        // if the chosen background is dark (luminance low), use it for the page background
+        if (bgL < 0.15) {
+          // set a subtle gradient using the chosen bg as the darker stop
+          root.style.setProperty('--page-bg', `linear-gradient(180deg, ${bg.hex} 0%, color-mix(in srgb, ${bg.hex} 8%, #000000 20%))`);
+        } else if (bgL > 0.85) {
+          // very light background - use a light gradient so UI doesn't go pure white
+          root.style.setProperty('--page-bg', `linear-gradient(180deg, ${bg.hex} 0%, color-mix(in srgb, ${bg.hex} 8%, #ffffff 20%))`);
+        } else {
+          // moderate luminance - clear to default so theme backgrounds show
+          root.style.removeProperty('--page-bg');
+        }
+      } catch (e) {}
     } catch (err) {
       errorBox.textContent = err.message;
       errorBox.classList.remove("hidden");

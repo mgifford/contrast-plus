@@ -11,6 +11,7 @@
   --table-border: #ddd;
   --preview-border: #ddd;
   --bg-page: #f3f4f6;
+  --page-bg: radial-gradient(circle at top left, #dbeafe, #f3f4f6);
   --panel-bg: #ffffff;
   --text-color: #111827;
   --link-color: #0b57d0;
@@ -65,6 +66,7 @@
   --table-border: #4b5563;
   --preview-border: #4b5563;
   --bg-page: #020617;
+  --page-bg: radial-gradient(circle at top left, #0f172a, #020617);
   --panel-bg: #020617;
   --text-color: #e5e7eb;
   --link-color: #93c5fd;
@@ -127,6 +129,7 @@
   --table-border: #ddd;
   --preview-border: #ddd;
   --bg-page: #f3f4f6;
+  --page-bg: radial-gradient(circle at top left, #dbeafe, #f3f4f6);
   --panel-bg: #ffffff;
   --text-color: #111827;
   --link-color: #0b57d0;
@@ -194,7 +197,7 @@ body {
 
 body {
   font-family: var(--font-body);
-  background: radial-gradient(circle at top left, #dbeafe, #f3f4f6);
+  background: var(--page-bg);
   background-attachment: fixed;
   color: var(--text-color);
 }
