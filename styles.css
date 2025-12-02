@@ -525,7 +525,7 @@ a:hover, a:active {
 /* --- Low Vision Simulation --- */
 .page[data-sim="low-vision"] .preview-box {
     /* Apply a slight blur effect */
-    filter: blur(2px) !important;
+    filter: blur(1.25px) !important;
 }
 
 /* --- Screen Glare Simulation --- */
