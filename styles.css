@@ -526,7 +526,7 @@ a:hover, a:active {
 /* Targets the preview box when the main page element has data-sim="low-vision" */
 #main[data-sim="low-vision"] .color-preview-box {
     /* Apply a slight blur effect */
-    filter: blur(1.5px) !important;
+    filter: blur(5px) !important;
 }
 
 /* --- Screen Glare Simulation --- */
