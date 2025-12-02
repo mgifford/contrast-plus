@@ -522,6 +522,26 @@ a:hover, a:active {
   filter: url(#sim-tritanopia);
 }
 
+/* --- New CSS Filter Simulations --- */
+
+/* 1. Low Vision Simulation: Blurs the content slightly to simulate common vision impairment */
+.color-preview-box.low-vision-sim {
+    /* Apply a slight blur filter */
+    filter: blur(1.5px);
+}
+
+/* 2. Screen Glare Simulation: Increases brightness and contrast to simulate harsh glare/lighting */
+.color-preview-box.screen-glare-sim {
+    /* Increase brightness and contrast, and slightly desaturate for a washed-out look */
+    filter: brightness(130%) contrast(140%) saturate(90%);
+}
+
+/* Optional: Combine effects for a more complex simulation */
+/* .color-preview-box.combined-low-visibility-sim {
+    filter: blur(1.5px) brightness(120%) contrast(130%);
+}
+*/
+
 .results-table {
   width: 100%;
   border-collapse: collapse;
