@@ -523,14 +523,13 @@ a:hover, a:active {
 }
 
 /* --- Low Vision Simulation --- */
-/* Targets the preview box when the main page element has data-sim="low-vision" */
-#main[data-sim="low-vision"] .color-preview-box {
+.page[data-sim="low-vision"] .preview-box {
     /* Apply a slight blur effect */
     filter: blur(5px) !important;
 }
 
 /* --- Screen Glare Simulation --- */
-#main[data-sim="screen-glare"] .color-preview-box {
+.page[data-sim="screen-glare"] .preview-box {
     /* Increase brightness and contrast dramatically for a harsh glare effect */
     filter: brightness(130%) contrast(140%) saturate(90%) !important;
 }
