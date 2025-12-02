@@ -155,16 +155,18 @@
     <section class="panel" aria-labelledby="preview-heading">
       <h2 id="preview-heading">Preview</h2>
 
-      <div class="preview-controls" aria-label="Color simulation options">
-        <span class="small">View preview as:</span>
-        <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
-          <button type="button" class="sim-toggle btn-primary" data-sim="normal" aria-pressed="true">Normal</button>
-          <button type="button" class="sim-toggle btn-secondary" data-sim="grayscale" aria-pressed="false">Grayscale</button>
-          <button type="button" class="sim-toggle btn-secondary" data-sim="protanopia" aria-pressed="false">Protanopia</button>
-          <button type="button" class="sim-toggle btn-secondary" data-sim="deuteranopia" aria-pressed="false">Deuteranopia</button>
-          <button type="button" class="sim-toggle btn-secondary" data-sim="tritanopia" aria-pressed="false">Tritanopia</button>
+<div class="preview-controls" aria-label="Color simulation options">
+    <span class="small">View preview as:</span>
+    <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
+        <button type="button" class="sim-toggle btn-primary sim-toggle-active" data-sim="normal" aria-pressed="true">Normal</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="grayscale" aria-pressed="false">Grayscale</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="protanopia" aria-pressed="false">Protanopia</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="deuteranopia" aria-pressed="false">Deuteranopia</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="tritanopia" aria-pressed="false">Tritanopia</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="low-vision" aria-pressed="false">Low Vision</button>
+        <button type="button" class="sim-toggle btn-secondary" data-sim="screen-glare" aria-pressed="false">Screen Glare</button>
         </div>
-      </div>
+</div>
 
       <p class="small">
         Both panels use your chosen colors for headings, body text, links, buttons, and simple icons.
