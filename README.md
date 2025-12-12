@@ -126,4 +126,10 @@ See the LICENSE.txt
 ## Maintainer
 
 Mike Gifford  
+
+## AI Disclosure
+
+Yes. AI was used in creating this tool. There be dragons! 
+
+
 https://github.com/mgifford
