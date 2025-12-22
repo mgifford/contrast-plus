@@ -120,4 +120,43 @@ A change is complete only when:
 - Assumptions and limitations are explicit
 - The project remains honest about what it does and does not provide
 
+## GitHub Pages constraints (required)
+
+All pages must work when hosted under the repository subpath:
+- `https://<user>.github.io/<repo>/`
+
+Rules:
+- Use relative URLs that respect the repo base path.
+  - Prefer `./assets/...` or `assets/...` from the current page.
+  - Avoid absolute root paths like `/assets/...` unless you explicitly set and use a base path.
+- Navigation links must work from every page (no assumptions about being at site root).
+- Do not rely on server-side routing. Every page must be reachable as a real file.
+- Avoid build steps unless documented and reproducible. Prefer “works from static files”.
+- If using Jekyll:
+  - Treat Jekyll processing as optional unless `_config.yml` and layouts are part of the repo.
+  - If you use `{{ site.baseurl }}`, use it consistently for links and assets.
+- Provide a failure-safe: pages should render a readable error if required data files are missing.
+
+Static asset rules:
+- Pin external CDN dependencies (exact versions) and document why each exists.
+- Prefer vendoring critical JS/CSS locally to reduce breakage.
+- Don’t depend on blocked resources (mixed content, HTTP, or fragile third-party endpoints).
+
+Caching/versioning:
+- If you fetch JSON/data files, include a lightweight cache-busting strategy (e.g., query param using a version string) OR document that users must hard refresh after updates.
+
+
+## Local preview (required before publish)
+
+Test pages via a local HTTP server (not `file://`) to match GitHub Pages behavior.
+
+Examples:
+- `python3 -m http.server 8000`
+- `npx serve`
+
+Verify:
+- links resolve under a subpath
+- fetch requests succeed
+- no console errors on load
+
 This project values clarity, accessibility, and education over compliance claims or false certainty.
