@@ -1352,25 +1352,6 @@ input[type="submit"]:hover {
   outline-offset: 2px;
 }
 
-/* Twitter / X Button */
-.social-btn.twitter {
-  background-color: #000;
-  border-color: #000;
-  color: white;
-}
-
-.social-btn.twitter:hover {
-  background-color: #1a1a1a;
-  border-color: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translateY(-2px);
-}
-
-.social-btn.twitter:focus-visible {
-  outline: 3px solid var(--focus-color);
-  outline-offset: 2px;
-}
-
 /* Bluesky Button */
 .social-btn.bluesky {
   background-color: #1185fe;
