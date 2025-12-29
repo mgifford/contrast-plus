@@ -248,6 +248,54 @@ a:hover {
   margin-bottom: 1.5rem;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.page-logo {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .theme-toggle {
+    align-self: flex-start;
+  }
+}
+
 .page-header h1 {
   margin-bottom: 0.35rem;
   letter-spacing: -0.03em;
@@ -1249,4 +1297,103 @@ input[type="submit"]:hover {
   /* also theme-aware */
   border: 2px solid color-mix(in srgb, currentColor 40%, transparent);
   display: block;
+}
+/* Social Share Section */
+.social-share {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.social-share p {
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.social-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid;
+  transition: all 150ms ease;
+  cursor: pointer;
+}
+
+/* LinkedIn Button */
+.social-btn.linkedin {
+  background-color: #0a66c2;
+  border-color: #0a66c2;
+  color: white;
+}
+
+.social-btn.linkedin:hover {
+  background-color: #094399;
+  border-color: #094399;
+  box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
+  transform: translateY(-2px);
+}
+
+.social-btn.linkedin:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Twitter / X Button */
+.social-btn.twitter {
+  background-color: #000;
+  border-color: #000;
+  color: white;
+}
+
+.social-btn.twitter:hover {
+  background-color: #1a1a1a;
+  border-color: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.social-btn.twitter:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Bluesky Button */
+.social-btn.bluesky {
+  background-color: #1185fe;
+  border-color: #1185fe;
+  color: white;
+}
+
+.social-btn.bluesky:hover {
+  background-color: #0070e0;
+  border-color: #0070e0;
+  box-shadow: 0 4px 12px rgba(17, 133, 254, 0.3);
+  transform: translateY(-2px);
+}
+
+.social-btn.bluesky:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Dark theme adjustments for social buttons */
+:root[data-theme="dark"] .social-buttons,
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .social-buttons {
+    gap: 0.75rem;
+  }
 }
