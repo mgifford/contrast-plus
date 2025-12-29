@@ -1371,6 +1371,25 @@ input[type="submit"]:hover {
   outline-offset: 2px;
 }
 
+/* Mastodon Button */
+.social-btn.mastodon {
+  background-color: #6364ff;
+  border-color: #6364ff;
+  color: white;
+}
+
+.social-btn.mastodon:hover {
+  background-color: #5150d0;
+  border-color: #5150d0;
+  box-shadow: 0 4px 12px rgba(99, 100, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.social-btn.mastodon:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
 /* Dark theme adjustments for social buttons */
 :root[data-theme="dark"] .social-buttons,
 @media (prefers-color-scheme: dark) {
