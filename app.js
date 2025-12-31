@@ -1650,6 +1650,8 @@ function setupContrastTool() {
     });
   });
 
+
+
   // Toggle preview buttons behavior (demo toggles).
   // Attach explicit handlers to each .btn-toggle so clicks and keyboard
   // activation reliably toggle `aria-pressed` and a visual class.

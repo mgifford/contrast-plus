@@ -485,6 +485,19 @@ a:hover, a:active {
   }
 }
 
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .forced-colors-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: auto;
+    max-width: 90vw;
+    width: 90vw;
+  }
+}
+
 .preview-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1069,6 +1082,72 @@ a:focus-visible,
   transition: height 220ms ease, background-color 180ms ease, transform 120ms ease, box-shadow 120ms ease;
   position: relative;
   will-change: transform, box-shadow;
+  /* Add border for forced-colors mode differentiation */
+  border: 2px solid transparent;
+}
+
+/* Forced colors mode support for bar chart */
+@media (forced-colors: active) {
+  .bar-chart-bar {
+    /* Use system colors and borders to differentiate bars */
+    forced-color-adjust: none;
+    border: 2px solid CanvasText;
+    background-color: Canvas !important;
+  }
+  
+  .bar-chart-bar:nth-child(1) {
+    background: repeating-linear-gradient(
+      45deg,
+      CanvasText,
+      CanvasText 2px,
+      Canvas 2px,
+      Canvas 4px
+    ) !important;
+  }
+  
+  .bar-chart-bar:nth-child(2) {
+    background: repeating-linear-gradient(
+      90deg,
+      CanvasText,
+      CanvasText 2px,
+      Canvas 2px,
+      Canvas 4px
+    ) !important;
+  }
+  
+  .bar-chart-bar:nth-child(3) {
+    background: repeating-linear-gradient(
+      135deg,
+      CanvasText,
+      CanvasText 2px,
+      Canvas 2px,
+      Canvas 4px
+    ) !important;
+  }
+  
+  .bar-chart-bar:nth-child(4) {
+    background: repeating-linear-gradient(
+      0deg,
+      CanvasText,
+      CanvasText 2px,
+      Canvas 2px,
+      Canvas 4px
+    ) !important;
+  }
+  
+  .bar-chart-bar:nth-child(n+5) {
+    background: CanvasText !important;
+  }
+  
+  .bar-chart .bar-code {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+  
+  .bar-chart .bar-chart-label {
+    color: CanvasText;
+  }
 }
 /* Bar code (hex / value) that appears above the bar on hover/focus */
 .bar-chart .bar-code {
