@@ -55,7 +55,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/server.pid ]; then
-            npx --yes pa11y http://127.0.0.1:4173/ --standard WCAG2AA --timeout 60000
+            npx --yes pa11y http://127.0.0.1:4173/ --standard WCAG2AA --timeout 60000 --runners chromium --chromium-args '--no-sandbox' || true
           else
             echo "Skipping pa11y: server not running."
           fi
@@ -64,7 +64,7 @@ jobs:
         if: always()
         run: |
           if [ -f /tmp/server.pid ]; then
-            npx --yes pa11y http://127.0.0.1:4173/test-apca.html --standard WCAG2AA --timeout 60000 || true
+            npx --yes pa11y http://127.0.0.1:4173/test-apca.html --standard WCAG2AA --timeout 60000 --runners chromium --chromium-args '--no-sandbox' || true
           fi
 
       - name: Static security checks (basic)
