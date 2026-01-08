@@ -82,7 +82,7 @@ jobs:
           exit ${HAS_ERRORS}
 
       - name: Link check (lychee)
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2.0.2
         with:
           args: --verbose --no-progress --retry-wait-time 2 --max-retries 2 "*.html"
           fail: true
