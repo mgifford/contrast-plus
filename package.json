@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "lint:html": "html-validate \"*.html\"",
+    "lint:spell": "cspell lint --config ./cspell.json --no-progress --show-context --relative \"**/*.md\" \"**/*.html\" \"!node_modules/**\"",
+    "test:a11y": "pa11y http://localhost:8005/ --standard wcag2aa --timeout 60000",
+    "serve": "python3 -m http.server 8005",
+    "check": "npm run lint:html && npm run lint:spell"
+  },
   "dependencies": {
     "apca-w3": "^0.1.9"
   }

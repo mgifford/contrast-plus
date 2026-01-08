@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -7,7 +7,7 @@
   <meta name="description"
         content="Compare APCA and WCAG 2.x contrast, see previews, and explore suggestions for foreground, background, and focus colors.">
   <meta name="color-scheme" content="light dark">
-  
+
   <!-- Open Graph / Social Media Meta Tags -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="APCA + WCAG 2 Contrast Checker">
@@ -16,18 +16,18 @@
   <meta property="og:image" content="https://mgifford.github.io/contrast-plus/accessibility.svg">
   <meta property="og:image:alt" content="Contrast Plus - APCA and WCAG Contrast Checker">
   <meta property="og:site_name" content="Contrast Plus">
-  
+
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="APCA + WCAG 2 Contrast Checker">
   <meta name="twitter:description" content="Compare APCA and WCAG 2.x contrast metrics. Preview accessible color combinations and find suggestions that meet both standards.">
   <meta name="twitter:image" content="https://mgifford.github.io/contrast-plus/accessibility.svg">
   <meta name="twitter:image:alt" content="Contrast Plus - APCA and WCAG Contrast Checker">
-  
+
   <!-- Additional SEO Meta Tags -->
   <meta name="keywords" content="contrast, WCAG, APCA, accessibility, color, contrast ratio, a11y, web accessibility, design">
   <meta name="author" content="Mike Gifford">
-  
+
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -39,14 +39,14 @@
           <img src="logo.svg" alt="Contrast Plus" class="page-logo">
           <h1>APCA + WCAG 2 Contrast Checker</h1>
         </div>
-        <div class="theme-toggle" aria-label="Color theme">
+        <div class="theme-toggle">
           <button type="button" class="theme-toggle-button" data-theme-choice="system">System</button>
           <button type="button" class="theme-toggle-button" data-theme-choice="light">Light</button>
           <button type="button" class="theme-toggle-button" data-theme-choice="dark">Dark</button>
         </div>
       </div>
       <p>
-        Enter colors using any modern CSS color format supported by your browser. This tool evaluates <a href="https://www.w3.org/TR/WCAG22/#contrast-minimum">WCAG&nbsp;2.x</a> & <a href="https://apcacontrast.com/">APCA Lc</a> contrast ratios.
+        Enter colors using any modern CSS color format supported by your browser. This tool evaluates <a href="https://www.w3.org/TR/WCAG22/#contrast-minimum">WCAG&nbsp;2.x</a> &amp; <a href="https://apcacontrast.com/">APCA Lc</a> contrast ratios.
       </p>
     </header>
 
@@ -56,11 +56,12 @@
       <div class="input-row">
         <div class="color-group">
           <h3>Foreground</h3>
-          <label class="field">
-            <span>Color value</span>
+          <div class="field">
+            <label for="fgText">Color value</label>
             <input id="fgText" class="text-input" type="text" value="#45ad7f" autocomplete="off" aria-describedby="colorExamples">
-          </label>
-          <label class="field">
+          </div>
+          <div class="field">
+            <label class="visually-hidden" for="fgPicker">Foreground color picker</label>
             <div class="picker-row">
               <div class="mini-group">
                 <div class="mini-label">Picker</div>
@@ -68,26 +69,27 @@
               </div>
               <div class="mini-group" aria-hidden="false">
                 <div class="mini-label">Nudge</div>
-                <button id="fgLighter" class="mini-btn" title="Make foreground darker" aria-label="Make foreground darker">+</button>
-                <button id="fgDarker" class="mini-btn" title="Make foreground lighter" aria-label="Make foreground lighter">−</button>
+                <button type="button" id="fgLighter" class="mini-btn" title="Make foreground darker" aria-label="Make foreground darker">+</button>
+                <button type="button" id="fgDarker" class="mini-btn" title="Make foreground lighter" aria-label="Make foreground lighter">−</button>
               </div>
               <div class="mini-group">
                 <div class="mini-label">Random</div>
-                <button id="randomFgDark" class="mini-btn" title="Random darker foreground" aria-label="Random darker foreground">Dark</button>
-                <button id="randomFgLight" class="mini-btn" title="Random lighter foreground" aria-label="Random lighter foreground">Light</button>
+                <button type="button" id="randomFgDark" class="mini-btn" title="Random darker foreground" aria-label="Random darker foreground">Dark</button>
+                <button type="button" id="randomFgLight" class="mini-btn" title="Random lighter foreground" aria-label="Random lighter foreground">Light</button>
               </div>
-              <button id="saveFg" class="small-btn picker-save" title="Save foreground color">Save</button>
+              <button type="button" id="saveFg" class="small-btn picker-save" title="Save foreground color">Save</button>
             </div>
-          </label>
+          </div>
         </div>
 
         <div class="color-group">
           <h3>Background</h3>
-          <label class="field">
-            <span>Color value</span>
+          <div class="field">
+            <label for="bgText">Color value</label>
             <input id="bgText" class="text-input" type="text" value="hsl(159.43, 33.98%, 20.2%)" autocomplete="off">
-          </label>
-          <label class="field">
+          </div>
+          <div class="field">
+            <label class="visually-hidden" for="bgPicker">Background color picker</label>
             <div class="picker-row">
               <div class="mini-group">
                 <div class="mini-label">Picker</div>
@@ -95,17 +97,17 @@
               </div>
               <div class="mini-group">
                 <div class="mini-label">Nudge</div>
-                <button id="bgLighter" class="mini-btn" title="Make background darker" aria-label="Make background darker">+</button>
-                <button id="bgDarker" class="mini-btn" title="Make background lighter" aria-label="Make background lighter">−</button>
+                <button type="button" id="bgLighter" class="mini-btn" title="Make background darker" aria-label="Make background darker">+</button>
+                <button type="button" id="bgDarker" class="mini-btn" title="Make background lighter" aria-label="Make background lighter">−</button>
               </div>
               <div class="mini-group">
                 <div class="mini-label">Random</div>
-                <button id="randomBgDark" class="mini-btn" title="Random darker background" aria-label="Random darker background">Dark</button>
-                <button id="randomBgLight" class="mini-btn" title="Random lighter background" aria-label="Random lighter background">Light</button>
+                <button type="button" id="randomBgDark" class="mini-btn" title="Random darker background" aria-label="Random darker background">Dark</button>
+                <button type="button" id="randomBgLight" class="mini-btn" title="Random lighter background" aria-label="Random lighter background">Light</button>
               </div>
-              <button id="saveBg" class="small-btn picker-save" title="Save background color">Save</button>
+              <button type="button" id="saveBg" class="small-btn picker-save" title="Save background color">Save</button>
             </div>
-          </label>
+          </div>
         </div>
 
         <div class="color-group">
@@ -115,12 +117,13 @@
             <span>Enable focus/hover color</span>
           </label>
           <div id="thirdContainer" class="third-container hidden">
-            <label class="field">
-              <span>Focus color value</span>
+            <div class="field">
+              <label for="thirdText">Focus color value</label>
               <input id="thirdText" class="text-input" type="text"
                      value="rebeccapurple" autocomplete="off">
-            </label>
-            <label class="field">
+            </div>
+            <div class="field">
+              <label class="visually-hidden" for="thirdPicker">Focus color picker</label>
               <div class="picker-row">
                 <div class="mini-group">
                   <div class="mini-label">Picker</div>
@@ -128,18 +131,18 @@
                 </div>
                 <div class="mini-group">
                   <div class="mini-label">Nudge</div>
-                  <button id="thirdLighter" class="mini-btn" title="Make focus color darker" aria-label="Make focus color darker">+</button>
-                  <button id="thirdDarker" class="mini-btn" title="Make focus color lighter" aria-label="Make focus color lighter">−</button>
+                  <button type="button" id="thirdLighter" class="mini-btn" title="Make focus color darker" aria-label="Make focus color darker">+</button>
+                  <button type="button" id="thirdDarker" class="mini-btn" title="Make focus color lighter" aria-label="Make focus color lighter">−</button>
                 </div>
                 <div class="mini-group">
                   <div class="mini-label">Random</div>
-                  <button id="randomThirdDark" class="mini-btn" title="Random darker focus color" aria-label="Random darker focus color">Dark</button>
-                  <button id="randomThirdLight" class="mini-btn" title="Random lighter focus color" aria-label="Random lighter focus color">Light</button>
+                  <button type="button" id="randomThirdDark" class="mini-btn" title="Random darker focus color" aria-label="Random darker focus color">Dark</button>
+                  <button type="button" id="randomThirdLight" class="mini-btn" title="Random lighter focus color" aria-label="Random lighter focus color">Light</button>
                 </div>
-                <button id="saveThird" class="small-btn picker-save" title="Save focus color">Save</button>
-                <button id="findBestFocus" class="small-btn picker-find" title="Suggest focus color" aria-label="Suggest focus color">Suggestion</button>
+                <button type="button" id="saveThird" class="small-btn picker-save" title="Save focus color">Save</button>
+                <button type="button" id="findBestFocus" class="small-btn picker-find" title="Suggest focus color" aria-label="Suggest focus color">Suggestion</button>
               </div>
-            </label>
+            </div>
             <div id="focusCandidates" class="focus-candidates small" aria-live="polite"></div>
           </div>
         </div>
@@ -147,10 +150,11 @@
 
       <p id="colorExamples" class="small"><i>
         <b>Examples:</b> <code>pink</code>, <code>#0044cc</code>, <code>rgb(10 120 200)</code>,
-        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code> & <code>oklch(0.7 0.16 250)</code>
+        <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code> &amp; <code>oklch(0.7 0.16 250)</code>
       </i></p>
 
-      <div class="input-row thresholds-row" aria-label="Contrast thresholds">
+      <div class="input-row thresholds-row" role="group" aria-labelledby="thresholds-legend">
+        <h3 id="thresholds-legend" class="visually-hidden">Contrast thresholds</h3>
         <div class="threshold-group">
           <h3>WCAG 2.x threshold</h3>
           <label>
@@ -181,7 +185,7 @@
     <section class="panel" aria-labelledby="preview-heading">
       <h2 id="preview-heading">Preview</h2>
 
-<div class="preview-controls" aria-label="Color simulation options">
+<div class="preview-controls">
     <span class="small">View preview as:</span>
     <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
         <button type="button" class="sim-toggle btn-primary sim-toggle-active" data-sim="normal" aria-pressed="true">Normal</button>
@@ -195,9 +199,9 @@
 		<!-- Hide not working
         <button type="button" class="sim-toggle btn-secondary" data-sim="screen-glare" aria-pressed="false">Screen Glare</button>
 		-->
-		
+
         </div>
-        
+
 
 </div>
 
@@ -209,7 +213,7 @@
       <div class="preview-grid">
         <div class="preview-card">
           <h3>Foreground on background</h3>
-          <div id="previewBase" class="preview-box" aria-label="Preview of foreground on background">
+          <div id="previewBase" class="preview-box">
             <h4 id="demoHeadingBase">Example heading</h4>
             <p>
               The quick brown fox jumps over the lazy dog. 1234567890.
@@ -218,12 +222,12 @@
             <p>
               <a id="demoLinkBase" href="#">Example link text</a>
             </p>
-            
+
             <div class="button-variants">
-              <button class="btn btn-text">Text</button>
-              <button class="btn btn-ghost">Ghost</button>
-              <button class="btn btn-filled">Filled</button>
-              <button class="btn btn-raised">Raised</button>
+              <button type="button" class="btn btn-text">Text</button>
+              <button type="button" class="btn btn-ghost">Ghost</button>
+              <button type="button" class="btn btn-filled">Filled</button>
+              <button type="button" class="btn btn-raised">Raised</button>
             </div>
             <div id="barChartContainer" class="bar-chart" aria-hidden="true"></div>
             <div id="previewSavedIconsBase" class="preview-saved-icons" aria-hidden="false"></div>
@@ -232,7 +236,7 @@
 
         <div id="previewThirdCard" class="preview-card hidden">
           <h3>Focus states exposed</h3>
-              <div id="previewThird" class="preview-box" aria-label="Preview of focus states on background">
+              <div id="previewThird" class="preview-box">
                 <h4 id="demoHeadingThird">Focus state example</h4>
             <p>
               This area shows how a focus or hover state could look against the
@@ -242,10 +246,10 @@
               <a id="demoLinkThird" href="#">Focused link example</a>
             </p>
             <div class="button-variants">
-              <button class="btn btn-text">Text</button>
-              <button class="btn btn-ghost">Ghost</button>
-              <button class="btn btn-filled">Filled</button>
-              <button class="btn btn-raised">Raised</button>
+              <button type="button" class="btn btn-text">Text</button>
+              <button type="button" class="btn btn-ghost">Ghost</button>
+              <button type="button" class="btn btn-filled">Filled</button>
+              <button type="button" class="btn btn-raised">Raised</button>
             </div>
             <div id="barChartContainerThird" class="bar-chart" aria-hidden="true"></div>
               <div id="previewSavedIconsThird" class="preview-saved-icons" aria-hidden="false"></div>
@@ -318,7 +322,7 @@
       <h2 id="harmony-heading">Harmony Palette Generator</h2>
       <p class="small">Generate a 5-color harmonious palette based on the current foreground color. (No external API used.)</p>
       <div class="harmony-controls">
-        <button id="harmonyButton" type="button">Generate Harmony Palette</button>
+        <button type="button" id="harmonyButton">Generate Harmony Palette</button>
         <div id="harmonyNote" class="small muted">Harmony is generated by rotating hue and adjusting lightness/saturation from the foreground color to produce visually distinct but related swatches.</div>
       </div>
       <div id="harmonyOutput" class="harmony-grid" aria-live="polite"></div>
@@ -329,8 +333,8 @@
       <div id="paletteContainer" class="palette-list">
         <p id="palettePlaceholder" class="small italic">No saved colors yet. Use the Save buttons near color inputs.</p>
           <div class="palette-footer">
-            <button id="clearPalette" type="button">Clear all</button>
-            <button id="copyPalette" type="button">Copy palette</button>
+            <button type="button" id="clearPalette">Clear all</button>
+            <button type="button" id="copyPalette">Copy palette</button>
           </div>
       </div>
     </section>
@@ -347,30 +351,30 @@
 	  <p>
         This project is open source. View the code on <a href="https://github.com/mgifford/contrast-plus/">GitHub</a>.
       </p>
-      
+
       <!-- Social Sharing Section -->
-      <div class="social-share" aria-label="Share this tool">
+      <div class="social-share">
         <p>Share this tool:</p>
         <div class="social-buttons">
-          <a class="social-btn linkedin" 
-             href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F" 
-             target="_blank" 
+          <a class="social-btn linkedin"
+             href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F"
+             target="_blank"
              rel="noopener noreferrer"
              title="Share on LinkedIn"
              aria-label="Share on LinkedIn">
             <span>LinkedIn</span>
           </a>
-          <a class="social-btn bluesky" 
-             href="https://bsky.app/intent/compose?text=Check%20out%20the%20APCA%20%2B%20WCAG%202%20Contrast%20Checker%20-%20a%20practical%20tool%20for%20evaluating%20color%20contrast%20with%20both%20standards%0Ahttps%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F" 
-             target="_blank" 
+          <a class="social-btn bluesky"
+             href="https://bsky.app/intent/compose?text=Check%20out%20the%20APCA%20%2B%20WCAG%202%20Contrast%20Checker%20-%20a%20practical%20tool%20for%20evaluating%20color%20contrast%20with%20both%20standards%0Ahttps%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F"
+             target="_blank"
              rel="noopener noreferrer"
              title="Share on Bluesky"
              aria-label="Share on Bluesky">
             <span>Bluesky</span>
           </a>
-          <a class="social-btn mastodon" 
-             href="https://mastodonshare.com/?text=Check%20out%20the%20APCA%20%2B%20WCAG%202%20Contrast%20Checker%20-%20a%20practical%20tool%20for%20evaluating%20color%20contrast%20with%20both%20standards&url=https%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F" 
-             target="_blank" 
+          <a class="social-btn mastodon"
+             href="https://mastodonshare.com/?text=Check%20out%20the%20APCA%20%2B%20WCAG%202%20Contrast%20Checker%20-%20a%20practical%20tool%20for%20evaluating%20color%20contrast%20with%20both%20standards&url=https%3A%2F%2Fmgifford.github.io%2Fcontrast-plus%2F"
+             target="_blank"
              rel="noopener noreferrer"
              title="Share on Mastodon"
              aria-label="Share on Mastodon">
@@ -380,8 +384,7 @@
       </div>
 
 <!-- Bluesky Footer -->
-<meta data-bsky-post-id="3m6xjotww3k2j" />
-<section class="post__likes" data-bsky-container>
+<section class="post__likes" data-bsky-container data-bsky-post-id="3m6xjotww3k2j">
   <h3 class="post__likesTitle">
     🦋 <span data-bsky-likes-count></span> likes on Bluesky
   </h3>
@@ -390,7 +393,7 @@
   </a>
   <ul data-bsky-likes class="post__likesList"></ul>
 </section>
-		
+
     </footer>
   </main>
 
@@ -421,7 +424,7 @@
       </filter>
     </defs>
   </svg>
-  
+
   <script type="module" src="app.js"></script>
   <script type="module" src="bluesky-likes.js"></script>
 

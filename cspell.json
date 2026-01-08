@@ -1,0 +1,47 @@
+{
+  "version": "0.2",
+  "language": "en-US",
+  "enableFiletypes": [
+    "markdown",
+    "html",
+    "css",
+    "javascript",
+    "json"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    ".git/**"
+  ],
+  "files": [
+    "**/*.{md,html,css,js,json}"
+  ],
+  "words": [
+    "WCAG",
+    "APCA",
+    "oklch",
+    "Lc",
+    "Bg",
+    "Yc",
+    "Ybg",
+    "apca",
+    "wcag",
+    "sRGB",
+    "luminance",
+    "colorspace",
+    "perceivable",
+    "operable",
+    "mgifford",
+    "Bluesky",
+    "Mastodon"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "contrast-plus-terms",
+      "path": "./cspell/project-terms.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": [
+    "contrast-plus-terms"
+  ]
+}

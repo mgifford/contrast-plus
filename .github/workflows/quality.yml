@@ -1,0 +1,104 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ "*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: HTML validation
+        run: |
+          npx --yes html-validate "*.html" || true
+
+      - name: Spell check (content only)
+        run: |
+          # Check Markdown and HTML content
+          npx --yes cspell@latest lint --config ./cspell.json --no-progress --show-context --relative \
+            "**/*.md" "**/*.html" \
+            "!node_modules/**"
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 >/tmp/ci-server.log 2>&1 &
+          echo $! > /tmp/server.pid
+
+      - name: Wait for server readiness
+        if: always()
+        run: |
+          if [ ! -f /tmp/server.pid ]; then
+            echo "Server not started; skipping readiness check." && exit 0
+          fi
+          for i in {1..12}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "Server did not start" >&2
+          exit 1
+
+      - name: Accessibility scan (home)
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            npx --yes pa11y http://127.0.0.1:4173/ --standard WCAG2AA --timeout 60000
+          else
+            echo "Skipping pa11y: server not running."
+          fi
+
+      - name: Accessibility scan (test page)
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            npx --yes pa11y http://127.0.0.1:4173/test-apca.html --standard WCAG2AA --timeout 60000 || true
+          fi
+
+      - name: Static security checks (basic)
+        run: |
+          set -e
+          HAS_ERRORS=0
+          # Warn on HTTP assets
+          if grep -RIn --include='*.html' 'src="http://' . 2>/dev/null | grep -v node_modules; then
+            echo "WARN: HTTP asset detected; prefer HTTPS." >&2
+          fi
+          # Warn on target=_blank without rel
+          if grep -RIn --include='*.html' 'target="_blank"' . 2>/dev/null | grep -v 'rel="noopener' | grep -v node_modules >/dev/null; then
+            echo "WARN: target=_blank without rel=\"noopener noreferrer\"." >&2
+          fi
+          exit ${HAS_ERRORS}
+
+      - name: Link check (lychee)
+        uses: lycheeverse/lychee-action@v1
+        with:
+          args: --verbose --no-progress --retry-wait-time 2 --max-retries 2 "*.html"
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log
+          path: /tmp/ci-server.log
+
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill "$(cat /tmp/server.pid)" || true
+          fi
