@@ -69,6 +69,10 @@
   --text-color: #e5e7eb;
   --link-color: #93c5fd;
   --link-hover: #bfdbfe;
+  /* Ensure buttons in explicit dark theme are readable against the dark panel background */
+  --button-bg: #8ab4f8;
+  --button-bg-hover: #a4c6ff;
+  --button-text: #111827;
   /* Simulation toggle active overrides for better contrast in dark mode */
   /* `--link-color` is already light in dark theme so it will be used directly */
 }
@@ -701,7 +705,7 @@ select, .small-select {
 }
 
 .status-fail {
-  background: #ef4444; /* red */
+  background: #b91c1c; /* darker red to meet WCAG contrast with white */
   color: #ffffff;
 }
 
@@ -1434,7 +1438,7 @@ input[type="submit"]:hover {
 /* Bluesky Button */
 .social-btn.bluesky {
   background-color: #0e71d8;
-  border-color: #1185fe;
+  border-color: #0e71d8;
   color: white;
 }
 
@@ -1453,7 +1457,7 @@ input[type="submit"]:hover {
 /* Mastodon Button */
 .social-btn.mastodon {
   background-color: #5e5ff2;
-  border-color: #6364ff;
+  border-color: #5e5ff2;
   color: white;
 }
 

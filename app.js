@@ -1065,7 +1065,9 @@ function setupContrastTool() {
         const value = Math.round(min + ((max - min) * (i / Math.max(1, baseCount - 1))));
         const bar = document.createElement('div');
         bar.className = 'bar-chart-bar';
-        bar.tabIndex = 0;
+        // If the container is aria-hidden, ensure the bar is not keyboard-focusable.
+        const containerHidden = container && container.getAttribute && container.getAttribute('aria-hidden') === 'true';
+        bar.tabIndex = containerHidden ? -1 : 0;
         bar.setAttribute('role', 'img');
         // determine display color; if this is the focus entry and a focus color was passed, use it
         const isFocusEntry = entry.label && String(entry.label).toLowerCase().includes('focus');
