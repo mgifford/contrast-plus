@@ -1433,7 +1433,7 @@ input[type="submit"]:hover {
 
 /* Bluesky Button */
 .social-btn.bluesky {
-  background-color: #1185fe;
+  background-color: #0e71d8;
   border-color: #1185fe;
   color: white;
 }
@@ -1452,7 +1452,7 @@ input[type="submit"]:hover {
 
 /* Mastodon Button */
 .social-btn.mastodon {
-  background-color: #6364ff;
+  background-color: #5e5ff2;
   border-color: #6364ff;
   color: white;
 }
