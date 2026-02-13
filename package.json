@@ -11,6 +11,11 @@
     "check": "npm run lint:html && npm run lint:spell"
   },
   "dependencies": {
-    "apca-w3": "^0.1.9"
+    "add": "^2.0.6",
+    "apca-w3": "^0.1.9",
+    "commit": "^0.0.4",
+    "git": "^0.1.5",
+    "package-lock.json": "^1.0.0",
+    "push": "^0.1.0"
   }
 }
