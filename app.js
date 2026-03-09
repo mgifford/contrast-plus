@@ -1013,6 +1013,273 @@ function setupContrastTool() {
     });
   }
 
+  // --- Tonal scale generator ---
+  // Lightness stops inspired by Tailwind / enterprise design systems
+  const TONAL_STOPS = [
+    { name: '50',  l: 0.95 },
+    { name: '100', l: 0.90 },
+    { name: '200', l: 0.80 },
+    { name: '300', l: 0.70 },
+    { name: '400', l: 0.60 },
+    { name: '500', l: 0.50 },
+    { name: '600', l: 0.40 },
+    { name: '700', l: 0.30 },
+    { name: '800', l: 0.20 },
+    { name: '900', l: 0.10 },
+    { name: '950', l: 0.05 },
+  ];
+
+  function generateTonalScale(fgRgb) {
+    const hsl = rgbToHsl(fgRgb);
+    return TONAL_STOPS.map(stop => {
+      // Clamp saturation to at least 10% so the scale retains visible hue (avoids near-gray tones)
+      const s = clamp(hsl.s, 0.10, 1);
+      const rgb = hslToRgb({ h: hsl.h, s, l: stop.l });
+      return { name: stop.name, hex: rgbToHex(rgb), rgb };
+    });
+  }
+
+  /**
+   * Blend a tonal hex color with a tint hex using CSS color-mix().
+   * Returns a CSS string. Falls back to the original hex if color-mix not supported.
+   */
+  function applyCohesiveTint(baseHex, tintHex, intensity) {
+    if (!intensity || intensity <= 0) return baseHex;
+    const tintPct = Math.round(clamp(intensity, 0, 100));
+    const basePct = 100 - tintPct;
+    return `color-mix(in oklch, ${tintHex} ${tintPct}%, ${baseHex} ${basePct}%)`;
+  }
+
+  /**
+   * Resolve a CSS color string to an RGB object, using the existing parseCssColor when possible.
+   * For color-mix() strings the browser may return oklch from getComputedStyle; the canvas
+   * approach reliably converts any CSS color to sRGB bytes.
+   */
+  function resolveColorString(cssColor) {
+    // Fast path: parseCssColor handles hex, rgb, hsl, named colors
+    if (!cssColor.startsWith('color-mix')) {
+      try { return parseCssColor(cssColor); } catch (e) { /* fall through */ }
+    }
+    // Canvas approach: draw a 1×1 pixel and read back the sRGB bytes.
+    // This works for color-mix(), oklch(), and any CSS color the browser supports.
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = cssColor;
+      ctx.fillRect(0, 0, 1, 1);
+      const d = ctx.getImageData(0, 0, 1, 1).data;
+      const r = d[0], g = d[1], b = d[2];
+      return { r, g, b, hex: rgbToHex({ r, g, b }) };
+    } catch (e) { /* fall through */ }
+    // Last resort: extract the base hex from `color-mix(in ..., <tint> X%, <base> Y%)` as a fallback
+    // when canvas is unavailable (e.g. inside a worker or strict sandbox).
+    const fallbackMatch = cssColor.match(/,\s*(#[0-9a-fA-F]{3,8})\s*\d*%\s*\)$/);
+    if (fallbackMatch) return parseCssColor(fallbackMatch[1]);
+    return parseCssColor(cssColor);
+  }
+
+  let _lastTonalScale = null; // cache for matrix refresh
+
+  function renderTonalOutput(scale, bgRgb, tintHex, tintIntensity) {
+    const out = document.getElementById('tonalOutput');
+    if (!out) return;
+    out.innerHTML = '';
+    _lastTonalScale = scale;
+
+    scale.forEach(c => {
+      const displayColor = applyCohesiveTint(c.hex, tintHex, tintIntensity);
+      const card = document.createElement('div');
+      card.className = 'tonal-swatch';
+
+      const box = document.createElement('div');
+      box.className = 'tonal-box';
+      box.style.backgroundColor = displayColor;
+      box.title = `${c.name} — ${c.hex}`;
+
+      const label = document.createElement('div');
+      label.className = 'tonal-label';
+      label.textContent = c.name;
+
+      const hex = document.createElement('div');
+      hex.className = 'tonal-hex';
+      hex.textContent = c.hex;
+
+      const controls = document.createElement('div');
+      controls.className = 'tonal-controls-inline';
+
+      const loadFg = document.createElement('button');
+      loadFg.type = 'button';
+      loadFg.textContent = 'Use FG';
+      loadFg.addEventListener('click', () => {
+        fgText.value = c.hex;
+        fgPicker.value = c.hex;
+        updateAll();
+      });
+      const loadBg = document.createElement('button');
+      loadBg.type = 'button';
+      loadBg.textContent = 'Use BG';
+      loadBg.addEventListener('click', () => {
+        bgText.value = c.hex;
+        bgPicker.value = c.hex;
+        updateAll();
+      });
+      controls.appendChild(loadFg);
+      controls.appendChild(loadBg);
+
+      card.appendChild(box);
+      card.appendChild(label);
+      card.appendChild(hex);
+      card.appendChild(controls);
+      out.appendChild(card);
+    });
+
+    // Always refresh the matrix after rendering swatches
+    renderContrastMatrix(scale, bgRgb, tintHex, tintIntensity);
+  }
+
+  function renderContrastMatrix(scale, bgRgb, tintHex, tintIntensity) {
+    const wrap = document.getElementById('contrast-matrix-output');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+
+    if (!scale || !scale.length || !bgRgb) {
+      wrap.textContent = 'Generate the tonal scale first.';
+      return;
+    }
+
+    const wcagThresholdEl = document.getElementById('wcagThreshold');
+    const apcaThresholdEl = document.getElementById('apcaThreshold');
+    const wcagThr = Number(wcagThresholdEl && wcagThresholdEl.value) || 4.5;
+    const apcaThr = Number(apcaThresholdEl && apcaThresholdEl.value) || 60;
+
+    const table = document.createElement('table');
+    table.className = 'contrast-matrix-table';
+    table.setAttribute('aria-label', 'Accessible contrast matrix: tonal colors vs background');
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['Stop', 'Color', 'WCAG Ratio', 'WCAG', 'APCA Lc', 'APCA', 'Use'].forEach(text => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = text;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    scale.forEach(c => {
+      const displayColor = applyCohesiveTint(c.hex, tintHex, tintIntensity);
+      let textRgb;
+      try {
+        textRgb = resolveColorString(displayColor);
+      } catch (e) {
+        textRgb = c.rgb;
+      }
+
+      const ratio = wcagContrast(textRgb, bgRgb);
+      const lc = apcaLc(textRgb, bgRgb);
+      const wcagPass = ratio >= wcagThr;
+      const apcaPass = !Number.isNaN(lc) && Math.abs(lc) >= apcaThr;
+
+      const row = document.createElement('tr');
+
+      // Stop name
+      const stopTd = document.createElement('td');
+      stopTd.textContent = c.name;
+      row.appendChild(stopTd);
+
+      // Color swatch + hex
+      const swatchTd = document.createElement('td');
+      const sw = document.createElement('span');
+      sw.className = 'matrix-swatch';
+      sw.style.backgroundColor = displayColor;
+      sw.setAttribute('aria-hidden', 'true');
+      const hexSpan = document.createElement('span');
+      hexSpan.className = 'matrix-hex';
+      hexSpan.textContent = c.hex;
+      swatchTd.appendChild(sw);
+      swatchTd.appendChild(hexSpan);
+      row.appendChild(swatchTd);
+
+      // WCAG ratio value
+      const wcagRatioTd = document.createElement('td');
+      wcagRatioTd.textContent = ratio.toFixed(2) + ':1';
+      row.appendChild(wcagRatioTd);
+
+      // WCAG pass/fail
+      const wcagTd = document.createElement('td');
+      wcagTd.textContent = wcagPass ? 'Pass' : 'Fail';
+      wcagTd.className = wcagPass ? 'matrix-pass' : 'matrix-fail';
+      row.appendChild(wcagTd);
+
+      // APCA Lc value
+      const apcaLcTd = document.createElement('td');
+      apcaLcTd.textContent = Number.isNaN(lc) ? 'n/a' : (Math.round(lc * 10) / 10).toString();
+      row.appendChild(apcaLcTd);
+
+      // APCA pass/fail
+      const apcaTd = document.createElement('td');
+      apcaTd.textContent = Number.isNaN(lc) ? 'n/a' : (apcaPass ? 'Pass' : 'Fail');
+      apcaTd.className = Number.isNaN(lc) ? '' : (apcaPass ? 'matrix-pass' : 'matrix-fail');
+      row.appendChild(apcaTd);
+
+      // Use buttons
+      const useTd = document.createElement('td');
+      const useFg = document.createElement('button');
+      useFg.type = 'button';
+      useFg.className = 'matrix-use-btn';
+      useFg.textContent = 'FG';
+      useFg.setAttribute('aria-label', `Use ${c.hex} as foreground`);
+      useFg.addEventListener('click', () => {
+        fgText.value = c.hex;
+        fgPicker.value = c.hex;
+        updateAll();
+      });
+      const useBg = document.createElement('button');
+      useBg.type = 'button';
+      useBg.className = 'matrix-use-btn';
+      useBg.textContent = 'BG';
+      useBg.setAttribute('aria-label', `Use ${c.hex} as background`);
+      useBg.addEventListener('click', () => {
+        bgText.value = c.hex;
+        bgPicker.value = c.hex;
+        updateAll();
+      });
+      useTd.appendChild(useFg);
+      useTd.appendChild(useBg);
+      row.appendChild(useTd);
+
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+
+    // Summary counts
+    const passWcag = scale.filter(c => {
+      try {
+        const rgb = resolveColorString(applyCohesiveTint(c.hex, tintHex, tintIntensity));
+        return wcagContrast(rgb, bgRgb) >= wcagThr;
+      } catch (e) { return false; }
+    }).length;
+    const passApca = scale.filter(c => {
+      try {
+        const rgb = resolveColorString(applyCohesiveTint(c.hex, tintHex, tintIntensity));
+        const lc = apcaLc(rgb, bgRgb);
+        return !Number.isNaN(lc) && Math.abs(lc) >= apcaThr;
+      } catch (e) { return false; }
+    }).length;
+
+    const summary = document.createElement('p');
+    summary.className = 'small matrix-summary';
+    summary.textContent = `${passWcag} of ${scale.length} stops pass WCAG ${wcagThr}:1 and ${passApca} of ${scale.length} pass APCA |Lc| \u2265 ${apcaThr} vs current background.`;
+    wrap.appendChild(summary);
+  }
+
   // --- Small dynamic visuals: bar chart + random SVG ---
   function updateBarChart(colors) {
     // Build entries once and render into both containers using sequential saved colors
@@ -1793,6 +2060,58 @@ function setupContrastTool() {
       liveRegion.textContent = 'Could not generate harmony: invalid foreground color.';
     }
   });
+
+  // --- Tonal scale + contrast matrix handlers ---
+  const tonalButton = document.getElementById('tonalButton');
+  const tintColorInput = document.getElementById('tintColor');
+  const tintIntensityInput = document.getElementById('tintIntensity');
+  const tintIntensityDisplay = document.getElementById('tintIntensityDisplay');
+
+  function getTintSettings() {
+    return {
+      tintHex: (tintColorInput && tintColorInput.value) || '#6366f1',
+      tintIntensity: tintIntensityInput ? Number(tintIntensityInput.value) : 0,
+    };
+  }
+
+  function triggerTonalGeneration() {
+    try {
+      const fg = parseCssColor(fgText.value);
+      const bg = parseCssColor(bgText.value);
+      const { tintHex, tintIntensity } = getTintSettings();
+      const scale = generateTonalScale(fg);
+      renderTonalOutput(scale, bg, tintHex, tintIntensity);
+    } catch (e) {
+      liveRegion.textContent = 'Could not generate tonal scale: invalid foreground color.';
+    }
+  }
+
+  if (tonalButton) tonalButton.addEventListener('click', triggerTonalGeneration);
+
+  if (tintIntensityInput) {
+    tintIntensityInput.addEventListener('input', () => {
+      if (tintIntensityDisplay) tintIntensityDisplay.textContent = tintIntensityInput.value + '%';
+      if (_lastTonalScale) {
+        try {
+          const bg = parseCssColor(bgText.value);
+          const { tintHex, tintIntensity } = getTintSettings();
+          renderTonalOutput(_lastTonalScale, bg, tintHex, tintIntensity);
+        } catch (e) { /* non-fatal */ }
+      }
+    });
+  }
+
+  if (tintColorInput) {
+    tintColorInput.addEventListener('input', () => {
+      if (_lastTonalScale) {
+        try {
+          const bg = parseCssColor(bgText.value);
+          const { tintHex, tintIntensity } = getTintSettings();
+          renderTonalOutput(_lastTonalScale, bg, tintHex, tintIntensity);
+        } catch (e) { /* non-fatal */ }
+      }
+    });
+  }
 
   // Render saved palette once at startup
   renderSavedPalette();
