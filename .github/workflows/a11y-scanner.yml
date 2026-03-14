@@ -1,0 +1,38 @@
+name: Accessibility Scanner (github/accessibility-scanner)
+
+# Uses the GitHub AI-powered Accessibility Scanner to scan the live GitHub Pages
+# site and file actionable GitHub Issues for any violations found.
+#
+# Requirements before enabling:
+#   1. Create a fine-grained PAT with: contents:write, issues:write,
+#      pull-requests:write, metadata:read
+#   2. Add it as a repository secret named GH_TOKEN
+#
+# See: https://github.com/github/accessibility-scanner
+
+on:
+  schedule:
+    # Run on the 1st of every month at 09:00 UTC
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  a11y-scan:
+    name: Monthly GitHub Pages accessibility scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Scan with github/accessibility-scanner
+        uses: github/accessibility-scanner@v2
+        with:
+          urls: |
+            https://mgifford.github.io/contrast-plus/
+            https://mgifford.github.io/contrast-plus/test-apca.html
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GH_TOKEN }}
+          cache_key: contrast-plus
+          skip_copilot_assignment: false
+          include_screenshots: true

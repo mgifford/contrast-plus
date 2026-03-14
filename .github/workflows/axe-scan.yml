@@ -1,0 +1,66 @@
+name: Axe-Core Accessibility Scan
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Run on the 1st of every month at 08:00 UTC
+    - cron: "0 8 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  axe-scan:
+    name: Axe-Core scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Start local server
+        run: |
+          python3 -m http.server 4173 >/tmp/axe-server.log 2>&1 &
+          echo $! > /tmp/axe-server.pid
+
+      - name: Wait for server readiness
+        run: |
+          for i in {1..12}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "Server did not start" >&2
+          exit 1
+
+      - name: Run axe-core scan (home page)
+        run: |
+          npx --yes @axe-core/cli@4.11.1 \
+            --chromium-args '--no-sandbox --disable-dev-shm-usage' \
+            http://127.0.0.1:4173/ || true
+
+      - name: Run axe-core scan (test-apca page)
+        run: |
+          npx --yes @axe-core/cli@4.11.1 \
+            --chromium-args '--no-sandbox --disable-dev-shm-usage' \
+            http://127.0.0.1:4173/test-apca.html || true
+
+      - name: Stop local server
+        if: always()
+        run: |
+          if [ -f /tmp/axe-server.pid ]; then
+            kill "$(cat /tmp/axe-server.pid)" || true
+          fi
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axe-server-log
+          path: /tmp/axe-server.log
