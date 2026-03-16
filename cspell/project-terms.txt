@@ -25,3 +25,6 @@ bsky
 Grayscale
 Protanopia
 Deuteranopia
+brunescence
+presbyopia
+sepia
