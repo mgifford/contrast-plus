@@ -593,6 +593,17 @@ a:hover, a:active {
     filter: blur(1.25px) !important;
 }
 
+/* --- Older Vision Simulation (65+) --- */
+/* NOTE: This is an educational approximation only, not a medical diagnostic tool.
+   sepia(0.3): approximates lens yellowing (brunescence), reducing blue/violet sensitivity
+   contrast(0.8): approximates reduced contrast sensitivity from smaller pupils and retinal changes
+   blur(0.5px): approximates mild presbyopia and early acuity loss
+   See: W3C WAI Older Users and Web Accessibility (https://www.w3.org/WAI/older-users/)
+        NIH National Eye Institute: The Aging Eye (https://www.ncbi.nlm.nih.gov/books/NBK218971/) */
+.page[data-sim="older-vision"] .preview-box {
+    filter: sepia(0.3) contrast(0.8) blur(0.5px);
+}
+
 /* --- Screen Glare Simulation --- */
 .page[data-sim="screen-glare"] .preview-box {
     /* Increase brightness and contrast dramatically for a harsh glare effect */
