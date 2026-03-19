@@ -129,7 +129,31 @@ Mike Gifford
 
 ## AI Disclosure
 
-Yes. AI was used in creating this tool. There be dragons! 
+This section documents which AI tools have been used in this project, what they were used for, and whether any AI is used when running the application.
 
+### AI Used to Build This Project
 
-https://github.com/mgifford
+#### GitHub Copilot (Claude-based Coding Agent)
+- **What it is**: GitHub Copilot Coding Agent, which at the time of use was powered by Anthropic's Claude models.
+- **What it was used for**: Code generation, documentation writing, refactoring, creating and updating `AGENTS.md`, and implementing feature changes via pull requests. Commit history includes commits authored by `Copilot@users.noreply.github.com`.
+- **Scope**: Development tooling only. Not used at runtime.
+
+#### GitHub Accessibility Scanner (AI-powered CI tool)
+- **What it is**: GitHub's AI-powered [`github/accessibility-scanner`](https://github.com/github/accessibility-scanner) action, used in the monthly CI workflow.
+- **What it was used for**: Automated accessibility scanning of the live GitHub Pages site to file actionable issues for violations.
+- **Scope**: CI/CD tooling only. Not used at runtime by end users.
+
+### AI at Runtime
+
+**No AI is used when a user runs this application.**
+
+The application is pure client-side JavaScript. All contrast calculations (WCAG 2.x and APCA) are performed using deterministic mathematical algorithms. The Harmony Palette Generator is also purely algorithmic (no LLM). No API calls to any AI service are made during normal use.
+
+### Browser-Based AI
+
+**No browser-based AI is invoked during normal application use.**
+
+The application does not use the Web AI API, the Web Neural Network API (`navigator.ml`), WebGPU for inference, or any embedded AI model. No AI features built into the browser are intentionally activated by this application.
+
+---
+

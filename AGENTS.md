@@ -105,6 +105,17 @@ Manual testing is required for meaningful changes:
 
 Automated tests are encouraged for calculation logic but do not replace manual review.
 
+## AI Disclosure Requirement
+Any AI agent contributing to this project **must** update the `README.md` AI Disclosure section to reflect its own use. Specifically:
+
+- Name the LLM or AI tool used (e.g., GitHub Copilot powered by Claude, GPT, etc.).
+- Describe what it was used for (e.g., code generation, documentation, refactoring).
+- Confirm whether any AI is used at runtime when a user runs the application.
+- Confirm whether any browser-based AI is invoked during normal application use.
+- Do not claim use of an AI tool that was not actually used.
+
+Each LLM or AI tool must be listed separately. Vague or blanket disclosures are not acceptable.
+
 ## Contribution Standards
 Pull requests should include:
 - Description of the change and rationale
