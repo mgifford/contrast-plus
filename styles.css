@@ -97,27 +97,68 @@
   }
 }
 
-.theme-toggle {
-  display: inline-flex;
-  gap: 0.25rem;
-  border-radius: 999px;
-  padding: 0.15rem;
-  background: rgba(148, 163, 184, 0.25);
-}
-
-.theme-toggle-button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  background: transparent;
+/* Single icon theme toggle button */
+#theme-toggle {
+  margin-left: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
   color: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.theme-toggle-active {
-  background: var(--button-bg);
-  color: var(--button-text);
+#theme-toggle:hover {
+  background-color: rgba(148, 163, 184, 0.2);
+}
+
+#theme-toggle:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+}
+
+.theme-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+/* Default (light mode): show moon icon to indicate "switch to dark" */
+.sun-icon {
+  display: none;
+}
+
+.moon-icon {
+  display: block;
+}
+
+/* System prefers dark before JS loads: show sun icon */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .sun-icon {
+    display: block;
+  }
+  :root:not([data-theme]) .moon-icon {
+    display: none;
+  }
+}
+
+/* Show sun (switch to light) when dark theme is active */
+:root[data-theme="dark"] .sun-icon {
+  display: block;
+}
+:root[data-theme="dark"] .moon-icon {
+  display: none;
+}
+
+/* Show moon (switch to dark) when light theme is active */
+:root[data-theme="light"] .sun-icon {
+  display: none;
+}
+:root[data-theme="light"] .moon-icon {
+  display: block;
 }
 
 :root {
@@ -295,7 +336,7 @@ a:hover {
     font-size: 1.5rem;
   }
 
-  .theme-toggle {
+  #theme-toggle {
     align-self: flex-start;
   }
 }

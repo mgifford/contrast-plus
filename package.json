@@ -17,5 +17,9 @@
     "git": "^0.1.5",
     "package-lock.json": "^1.0.0",
     "push": "^0.1.0"
+  },
+  "devDependencies": {
+    "cspell": "^9.7.0",
+    "html-validate": "^10.11.2"
   }
 }
