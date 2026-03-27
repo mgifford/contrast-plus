@@ -375,6 +375,36 @@ a:hover {
   min-width: 260px;
 }
 
+.swap-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.swap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.swap-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.swap-btn:focus-visible {
+  outline: 2px solid var(--focus-color, #005fcc);
+  outline-offset: 2px;
+}
+
 .field {
   display: flex;
   flex-direction: column;
