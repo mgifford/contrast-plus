@@ -1974,11 +1974,21 @@ function setupContrastTool() {
   const saveFgBtn = document.getElementById('saveFg');
   const saveBgBtn = document.getElementById('saveBg');
   const saveThirdBtn = document.getElementById('saveThird');
+  const swapColorsBtn = document.getElementById('swapColors');
   const harmonyButton = document.getElementById('harmonyButton');
 
   if (saveFgBtn) saveFgBtn.addEventListener('click', () => addSavedColor(fgText.value.trim() || fgPicker.value));
   if (saveBgBtn) saveBgBtn.addEventListener('click', () => addSavedColor(bgText.value.trim() || bgPicker.value));
   if (saveThirdBtn) saveThirdBtn.addEventListener('click', () => addSavedColor(thirdText.value.trim() || thirdPicker.value));
+  if (swapColorsBtn) swapColorsBtn.addEventListener('click', () => {
+    const fgVal = fgText.value;
+    const fgHex = fgPicker.value;
+    fgText.value = bgText.value;
+    fgPicker.value = bgPicker.value;
+    bgText.value = fgVal;
+    bgPicker.value = fgHex;
+    updateAll();
+  });
   const findBestFocusBtn = document.getElementById('findBestFocus');
   let focusSuggestionAttempt = 0;
   let _lastFgForSuggestion = null;
