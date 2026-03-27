@@ -130,8 +130,9 @@ function setupContrastTool() {
 
   const liveRegion = document.getElementById("liveRegion");
 
-  
-  const themeButtons = Array.from(document.querySelectorAll("[data-theme-choice]"));
+  const themeToggleBtn = document.getElementById("theme-toggle");
+  const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  let userHasThemeOverride = false;
 
   // Read colors from URL params on load (e.g., ?fg=%23B53636&bg=%234e4c18&third=%23663399)
   function readColorsFromURL() {
@@ -168,24 +169,26 @@ function setupContrastTool() {
     } catch (e) {}
   }
 
-  function applyTheme(mode) {
+  function applyTheme(theme) {
     const root = document.documentElement;
-    if (mode === "light" || mode === "dark") {
-      root.dataset.theme = mode;
+    if (theme === "light" || theme === "dark") {
+      root.dataset.theme = theme;
     } else {
       delete root.dataset.theme;
     }
-    themeButtons.forEach(btn => {
-      if (btn.dataset.themeChoice === mode) {
-        btn.classList.add("theme-toggle-active");
-      } else if (mode === "system" && btn.dataset.themeChoice === "system") {
-        btn.classList.add("theme-toggle-active");
+    if (themeToggleBtn) {
+      if (theme === "dark" || (theme === "system" && prefersDarkScheme.matches)) {
+        themeToggleBtn.setAttribute("aria-label", "Switch to light mode");
       } else {
-        btn.classList.remove("theme-toggle-active");
+        themeToggleBtn.setAttribute("aria-label", "Switch to dark mode");
       }
-    });
+    }
     try {
-      localStorage.setItem("contrastToolTheme", mode);
+      if (theme === "light" || theme === "dark") {
+        localStorage.setItem("contrastToolTheme", theme);
+      } else {
+        localStorage.removeItem("contrastToolTheme");
+      }
     } catch {}
   }
 
@@ -194,14 +197,17 @@ function setupContrastTool() {
   parserElement.style.display = "none";
   document.body.appendChild(parserElement);
 
-  let savedTheme = "system";
+  // Determine initial theme: use stored user preference, or fall back to system preference
+  const systemTheme = prefersDarkScheme.matches ? "dark" : "light";
+  let initialTheme = systemTheme;
   try {
     const stored = localStorage.getItem("contrastToolTheme");
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      savedTheme = stored;
+    if (stored === "light" || stored === "dark") {
+      initialTheme = stored;
+      userHasThemeOverride = true;
     }
   } catch {}
-  applyTheme(savedTheme);
+  applyTheme(initialTheme);
 
   // ---------- Helpers ----------
 
@@ -1945,12 +1951,23 @@ function setupContrastTool() {
     });
   });
 
-  themeButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const choice = btn.dataset.themeChoice || "system";
-      applyTheme(choice);
-      liveRegion.textContent = `Theme set to ${choice}.`;
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+      const currentIsDark =
+        document.documentElement.dataset.theme === "dark" ||
+        (!document.documentElement.dataset.theme && prefersDarkScheme.matches);
+      const newTheme = currentIsDark ? "light" : "dark";
+      userHasThemeOverride = true;
+      applyTheme(newTheme);
+      liveRegion.textContent = `Theme set to ${newTheme}.`;
     });
+  }
+
+  // Listen for OS-level theme changes (only when the user has not set an override)
+  prefersDarkScheme.addEventListener("change", (e) => {
+    if (!userHasThemeOverride) {
+      applyTheme(e.matches ? "dark" : "light");
+    }
   });
 
   // Wire small save buttons (if present)
