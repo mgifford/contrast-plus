@@ -28,3 +28,13 @@ Deuteranopia
 brunescence
 presbyopia
 sepia
+axe-core
+pa11y
+SLAs
+lychee
+Lychee
+LHCI
+Playwright
+CivicActions
+AccessLint
+dequelabs

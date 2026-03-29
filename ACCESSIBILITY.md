@@ -105,4 +105,57 @@ We regularly review and update:
 - Keyboard and screen-reader behavior based on community feedback
 - Inclusive language and terminology
 
-Last updated: 2026-03-27
+## 12. CI/CD Accessibility Best Practices
+
+Integrating accessibility checks into the CI/CD pipeline ensures regressions are caught before they reach users. This section documents the strategy used in contrast-plus and offers guidance for contributors adding new automation.
+
+Full reference: [CI/CD Accessibility Best Practices](https://github.com/mgifford/ACCESSIBILITY.md/blob/main/examples/CI_CD_ACCESSIBILITY_BEST_PRACTICES.md)
+
+### Strategy: Local-First
+
+Run audits locally before pushing. This is the fastest feedback loop and keeps CI noise low.
+
+```bash
+# Serve the site locally (matches GitHub Pages behavior)
+npm run serve   # python3 -m http.server 8005
+
+# Then, in a second terminal:
+npm run test:a11y   # pa11y scan against http://localhost:8005/
+npm run check       # HTML validation + spell check
+```
+
+### Workflows in this repository
+
+| Workflow file | Trigger | What it checks |
+|---|---|---|
+| `quality.yml` | Push to `main`, every PR | HTML validation, spell check, pa11y (WCAG 2 AA), link check, basic security |
+| `axe-scan.yml` | Push to `main`, monthly | axe-core scan of both pages |
+| `a11y-scanner.yml` | Monthly, manual dispatch | GitHub AI accessibility scanner against the live GitHub Pages site |
+
+All workflow definitions live in [`.github/workflows/`](.github/workflows/).
+
+### Governance and SLAs
+
+- **Critical failures** (broken keyboard nav, inaccessible color picker) block merge via the `quality.yml` checks.
+- **Scheduled scan findings** from `a11y-scanner.yml` are filed as GitHub Issues with the `accessibility` label.
+- If open accessibility issues exist, the monthly scanner is paused automatically to prevent alert fatigue.
+- Issues are triaged using the severity taxonomy in [§4](#4-reporting-and-severity-taxonomy) above.
+
+### Extending the pipeline
+
+When adding new interactive features or pages, update CI accordingly:
+
+1. **Add the new URL** to the `urls` list in `a11y-scanner.yml` and to the axe-core scan steps in `axe-scan.yml`.
+2. **Test both light and dark themes** — the `prefers-color-scheme` media query affects contrast values.
+3. **Test on mobile viewport sizes** — layout changes can introduce new accessibility issues.
+4. **Export structured JSON reports** when doing deep audits so findings are reviewable and traceable.
+
+### Alternative tools and resources
+
+- **[Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci)** — enforce 100% accessibility and performance scores as a quality gate.
+- **[Playwright + axe-core](https://github.com/dequelabs/axe-core-npm/tree/develop/packages/playwright)** — dynamic testing including open menus, modals, and theme emulation.
+- **[AccessLint](https://github.com/accesslint)** — inline PR comments without a full CI run.
+- **[Open-Scans](https://github.com/mgifford/open-scans)** — external scans using multiple engines against a live URL.
+- **[CivicActions: Scaling Automation](https://accessibility.civicactions.com/posts/how-we-scale-inclusive-website-content-with-automated-testing-and-open-source-tools)** — enterprise-scale a11y philosophy.
+
+Last updated: 2026-03-29
