@@ -167,8 +167,8 @@
         <code>hsl(200 40% 40%)</code>, <code>lch(60 50 240)</code> &amp; <code>oklch(0.7 0.16 250)</code>
       </i></p>
 
-      <div class="input-row thresholds-row" role="group" aria-labelledby="thresholds-legend">
-        <h3 id="thresholds-legend" class="visually-hidden">Contrast thresholds</h3>
+      <fieldset class="input-row thresholds-row">
+        <legend class="visually-hidden">Contrast thresholds</legend>
         <div class="threshold-group">
           <h3>WCAG 2.x threshold</h3>
           <label>
@@ -193,7 +193,7 @@
             </select>
           </label>
         </div>
-      </div>
+      </fieldset>
     </section>
 
     <section class="panel" aria-labelledby="preview-heading">
@@ -201,7 +201,8 @@
 
 <div class="preview-controls">
     <span class="small">View preview as:</span>
-    <div class="sim-toggle-group" role="group" aria-label="Color vision simulation">
+    <fieldset class="sim-toggle-group">
+        <legend class="visually-hidden">Color vision simulation</legend>
         <button type="button" class="sim-toggle btn-primary sim-toggle-active" data-sim="normal" aria-pressed="true">Normal</button>
         <button type="button" class="sim-toggle btn-secondary" data-sim="grayscale" aria-pressed="false">Grayscale</button>
         <button type="button" class="sim-toggle btn-secondary" data-sim="protanopia" aria-pressed="false">Protanopia</button>
@@ -215,7 +216,7 @@
         <button type="button" class="sim-toggle btn-secondary" data-sim="screen-glare" aria-pressed="false">Screen Glare</button>
 		-->
 
-        </div>
+        </fieldset>
 
 
 </div>
