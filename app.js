@@ -667,7 +667,11 @@ function setupContrastTool() {
     const tr = document.createElement("tr");
 
     const tdLabel = document.createElement("td");
-    tdLabel.textContent = label;
+    if (label instanceof Node) {
+      tdLabel.appendChild(label);
+    } else {
+      tdLabel.textContent = label;
+    }
     tdLabel.setAttribute('data-label', 'Pair');
 
     // color cell shows small swatches and the original CSS string values for quick copy
@@ -1578,7 +1582,10 @@ function setupContrastTool() {
     const baseLc = apcaLc(fg, bg);
     const baseWcagPass = baseRatio >= wcagThreshold;
     const baseApcaPass = !Number.isNaN(baseLc) ? Math.abs(baseLc) >= apcaThreshold : true;
-    addResultRow("Foreground and background", baseRatio, baseWcagPass, baseLc, baseApcaPass,
+    const fgBgAbbr = document.createElement("abbr");
+    fgBgAbbr.title = "Foreground and background";
+    fgBgAbbr.textContent = "FG & BG";
+    addResultRow(fgBgAbbr, baseRatio, baseWcagPass, baseLc, baseApcaPass,
       { display: fgText.value || fg.hex, hex: fg.hex }, { display: bgText.value || bg.hex, hex: bg.hex });
 
     liveSummary.push(
