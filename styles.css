@@ -1426,6 +1426,34 @@ input[type="submit"]:hover {
   }
 }
 
+/* Two-column layout: Inputs on the left, Results/Preview/Suggestions on the right */
+.app-layout {
+  display: block; /* single column on mobile */
+}
+
+.col-inputs,
+.col-results {
+  /* no extra spacing on mobile — panels already have margin-bottom */
+}
+
+@media (min-width: 900px) {
+  .app-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+    align-items: start;
+  }
+
+  .col-inputs {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .col-results {
+    min-width: 0; /* prevent grid blowout */
+  }
+}
+
 
 :root[data-theme="light"] body {
   background: var(--bg-page);

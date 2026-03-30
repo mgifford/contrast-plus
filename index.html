@@ -54,6 +54,8 @@
       </p>
     </header>
 
+    <div class="app-layout">
+      <div class="col-inputs">
     <section class="panel" aria-labelledby="inputs-heading">
       <h2 id="inputs-heading">Inputs</h2>
 
@@ -195,6 +197,35 @@
         </div>
       </div>
     </section>
+      </div><!-- /.col-inputs -->
+
+      <div class="col-results">
+    <section class="panel" aria-labelledby="results-heading">
+      <h2 id="results-heading">Results</h2>
+
+      <div id="errorBox" class="error-box hidden" role="alert" aria-live="assertive"></div>
+
+      <table class="results-table">
+        <thead>
+        <tr>
+          <th scope="col">Pair</th>
+          <th scope="col">Colors</th>
+          <th scope="col">WCAG ratio</th>
+          <th scope="col">WCAG status</th>
+          <th scope="col">APCA Lc</th>
+          <th scope="col">APCA status</th>
+        </tr>
+        </thead>
+        <tbody id="resultsBody">
+        <!-- Filled by JS -->
+        </tbody>
+      </table>
+
+      <div id="focusSummary" class="focus-summary hidden">
+        <h3>Focus appearance (WCAG&nbsp;2.2&nbsp;2.4.13)</h3>
+        <p id="focusText"></p>
+      </div>
+    </section>
 
     <section class="panel" aria-labelledby="preview-heading">
       <h2 id="preview-heading">Preview</h2>
@@ -273,33 +304,6 @@
       </div>
     </section>
 
-    <section class="panel" aria-labelledby="results-heading">
-      <h2 id="results-heading">Results</h2>
-
-      <div id="errorBox" class="error-box hidden" role="alert" aria-live="assertive"></div>
-
-      <table class="results-table">
-        <thead>
-        <tr>
-          <th scope="col">Pair</th>
-          <th scope="col">Colors</th>
-          <th scope="col">WCAG ratio</th>
-          <th scope="col">WCAG status</th>
-          <th scope="col">APCA Lc</th>
-          <th scope="col">APCA status</th>
-        </tr>
-        </thead>
-        <tbody id="resultsBody">
-        <!-- Filled by JS -->
-        </tbody>
-      </table>
-
-      <div id="focusSummary" class="focus-summary hidden">
-        <h3>Focus appearance (WCAG&nbsp;2.2&nbsp;2.4.13)</h3>
-        <p id="focusText"></p>
-      </div>
-    </section>
-
     <section id="suggestSection" class="panel hidden" aria-labelledby="suggest-heading">
       <h2 id="suggest-heading">Suggested colors that move toward both targets</h2>
       <p class="small">
@@ -332,6 +336,8 @@
         <p class="small" id="suggestionStatus"></p>
       </div>
     </section>
+      </div><!-- /.col-results -->
+    </div><!-- /.app-layout -->
 
     <section class="panel" aria-labelledby="harmony-heading">
       <h2 id="harmony-heading">Harmony Palette Generator</h2>
