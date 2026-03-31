@@ -158,4 +158,100 @@ When adding new interactive features or pages, update CI accordingly:
 - **[Open-Scans](https://github.com/mgifford/open-scans)** — external scans using multiple engines against a live URL.
 - **[CivicActions: Scaling Automation](https://accessibility.civicactions.com/posts/how-we-scale-inclusive-website-content-with-automated-testing-and-open-source-tools)** — enterprise-scale a11y philosophy.
 
-Last updated: 2026-03-29
+## 13. Color Contrast Best Practices
+
+Because contrast-plus is a tool *about* color contrast, this project holds itself to a higher standard of contrast quality than a typical web application. This section summarizes the rules contributors must follow and the thresholds all UI colors must meet.
+
+Full reference: [Color Contrast Accessibility Best Practices](https://github.com/mgifford/ACCESSIBILITY.md/blob/main/examples/COLOR_CONTRAST_ACCESSIBILITY_BEST_PRACTICES.md)
+
+### Core principle
+
+Sufficient contrast between foreground and background colors is a prerequisite for users to read text, identify UI components, perceive graphical content, and track keyboard focus. Color alone must never be the sole means of conveying information.
+
+All visual interface elements that convey information or require user interaction must meet the applicable WCAG 2.2 Level AA contrast thresholds below. Contrast must be maintained in **light mode, dark mode, and forced-colors (high contrast) mode**.
+
+### WCAG 2.2 requirements overview
+
+| Success Criterion | Level | Requirement | Applies To |
+|:---|:---:|:---|:---|
+| 1.4.1 Use of Color | A | Color must not be the only visual means of conveying information | All content |
+| 1.4.3 Contrast (Minimum) | AA | 4.5:1 for normal text; 3:1 for large text | Text and images of text |
+| 1.4.6 Contrast (Enhanced) | AAA | 7:1 for normal text; 4.5:1 for large text | Text and images of text |
+| 1.4.11 Non-text Contrast | AA | 3:1 against adjacent colors | UI components, graphical objects |
+| 2.4.13 Focus Appearance | AA | Focus indicator ≥ perimeter of component × 2 CSS px; 3:1 contrast change | Keyboard focus indicators |
+
+### Text contrast thresholds (WCAG 1.4.3)
+
+| Text type | Minimum (AA) | Enhanced (AAA) |
+|:---|:---:|:---:|
+| Normal text (below 18pt / 14pt bold) | **4.5:1** | 7:1 |
+| Large text (18pt+ / 14pt+ bold) | **3:1** | 4.5:1 |
+| Logotypes, incidental/decorative text, disabled controls | Exempt | Exempt |
+
+**"Large text"** means 18pt (≈ 24 CSS `px`) or larger in regular weight, or 14pt (≈ 18.67 CSS `px`) or larger in bold weight.
+
+### Non-text contrast (WCAG 1.4.11)
+
+Form input borders, interactive component boundaries, meaningful icons, chart elements, and status indicators must all achieve **3:1** against their adjacent colors. Decorative graphics, inactive/disabled components, and logos are exempt.
+
+### Focus appearance (WCAG 2.4.13)
+
+Every keyboard-focusable element must have a visible focus indicator that:
+
+1. Encloses the component with a minimum area of the component's perimeter × 2 CSS pixels.
+2. Has **3:1 contrast** between focused and unfocused states.
+3. Has **3:1 contrast** against every adjacent color in the unfocused state.
+
+Use `outline` for focus rings — it is preserved in forced-colors mode by default. Never suppress focus visibility with `outline: none` or `outline: 0` without providing an equivalent replacement.
+
+### Forced-colors (high contrast) mode
+
+The CSS `forced-colors` media query replaces author colors with system-defined values. Ensure the UI:
+
+- Uses `outline` (not `box-shadow`) for focus indicators.
+- Does not rely on `background-color` gradients or pseudo-element colors to convey information.
+- Applies `@media (forced-colors: active)` overrides for SVG icons and custom components as needed.
+
+Test using Chrome DevTools → Rendering → "Emulate CSS media feature forced-colors: active".
+
+### APCA — the emerging standard
+
+The [Advanced Perceptual Contrast Algorithm (APCA)](https://apcacontrast.com/) is the algorithm this tool measures and displays. APCA is **not yet required** by WCAG 2.2 but is expected in WCAG 3.0. Teams should continue to meet WCAG 2.2 AA requirements in parallel and treat APCA as supplemental guidance.
+
+| Content type | Minimum Lc | Recommended Lc |
+|:---|:---:|:---:|
+| Normal body text (16px / 400 weight) | 60 | 75 |
+| Large heading text (24px+ / 700 weight) | 45 | 60 |
+| UI component labels | 45 | 60 |
+| Placeholder / muted text | 30 | 45 |
+
+Lc values are signed (positive = dark-on-light, negative = light-on-dark); only the absolute value is compared against thresholds.
+
+### Common mistakes
+
+| Mistake | Why it fails | Fix |
+|:---|:---|:---|
+| `outline: none` with no replacement | Focus invisible for keyboard users (2.4.7, 2.4.13) | Provide a visible custom focus style |
+| Low-contrast placeholder text | Placeholder below 4.5:1 fails 1.4.3 | Use a placeholder color ≥ 4.5:1 or place labels outside the field |
+| Error states shown only with red color | Color is sole cue (1.4.1) | Add error icon, text label, and `aria-invalid` |
+| Contrast checked only in light mode | Dark mode or high contrast mode may fail | Test all modes |
+| Gradient background behind text | Contrast varies across the gradient | Verify at the lowest-contrast region or use a solid overlay |
+| Icon-only buttons with low-contrast icons | Icon fails 3:1 non-text requirement (1.4.11) | Render icons in a color with ≥ 3:1 contrast against its background |
+
+### Contrast testing checklist
+
+#### Automated
+- [ ] Run axe-core `color-contrast` rule against all pages (`npm run test:a11y`)
+- [ ] Run `color-contrast-enhanced` rule for AAA coverage
+- [ ] Validate focus indicator contrast via axe `focus-order-semantics` and `focus-visible` rules
+
+#### Manual
+- [ ] Check text contrast for all text sizes with a contrast checker tool
+- [ ] Check non-text contrast for all form controls, icons, and data visualizations
+- [ ] Verify focus ring is visible on all interactive elements in default and dark modes
+- [ ] Test in Windows High Contrast / forced-colors mode
+- [ ] Test at browser zoom 200% and 400%
+- [ ] Review all interactive states: default, hover, focus, active, visited, error, disabled
+- [ ] View the page in grayscale and confirm all information conveyed by color is also conveyed by text, icons, or patterns
+
+Last updated: 2026-03-31
