@@ -276,7 +276,7 @@ function setupContrastTool() {
   function relativeLuminance({ r, g, b }) {
     function channel(c) {
       const cs = c / 255;
-      return cs <= 0.03928 ? cs / 12.92 : Math.pow((cs + 0.055) / 1.055, 2.4);
+      return cs <= 0.04045 ? cs / 12.92 : Math.pow((cs + 0.055) / 1.055, 2.4);
     }
     const R = channel(r);
     const G = channel(g);
