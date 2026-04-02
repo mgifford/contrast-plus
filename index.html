@@ -188,10 +188,10 @@
           <label>
             <span>Target Lc</span>
             <select id="apcaThreshold">
-              <option value="60">60 (body text)</option>
-              <option value="45">45 (large text or UI)</option>
-              <option value="75">75 (small text)</option>
-              <option value="90">90 (very small text)</option>
+              <option value="60">Lc 60 – body text (≥16 px, normal weight)</option>
+              <option value="45">Lc 45 – large text or UI (≥24 px or bold)</option>
+              <option value="75">Lc 75 – small text (14–15 px, normal weight)</option>
+              <option value="90">Lc 90 – very small or placeholder text</option>
             </select>
           </label>
         </div>
@@ -254,7 +254,7 @@
 
       <p class="small">
         Both panels use your chosen colors for headings, body text, links, buttons, and simple icons.
-        The right-hand panel shows a focus or hover state using the third color when enabled.
+        The second panel shows focus and hover states using the third color when enabled.
       </p>
 
       <div class="preview-grid">
@@ -384,7 +384,7 @@
 
     <footer class="page-footer">
       <p>
-        WCAG 2.x contrast uses the standard luminance formula. APCA is loaded via a separate script;
+        WCAG 2.x contrast uses the luminance formula defined in WCAG 2.2 (sRGB threshold 0.04045, per IEC&nbsp;61966-2-1). APCA is loaded via a separate script;
         if it fails to load, APCA results show <code>n/a</code>. Color simulations are approximate
         and for visual exploration only.
       </p>
