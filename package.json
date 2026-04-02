@@ -8,6 +8,7 @@
     "lint:spell": "cspell lint --config ./cspell.json --no-progress --show-context --relative \"**/*.md\" \"**/*.html\" \"!node_modules/**\"",
     "test:a11y": "pa11y http://localhost:8005/ --standard wcag2aa --timeout 60000",
     "serve": "python3 -m http.server 8005",
+    "test": "node --test tests/*.test.js",
     "check": "npm run lint:html && npm run lint:spell"
   },
   "dependencies": {
