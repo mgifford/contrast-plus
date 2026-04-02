@@ -31,6 +31,7 @@ import {
   generateTonalScale,
   generateHarmony,
   applyCohesiveTint,
+  computeClosestFocus,
 } from './color-utils.js';
 
 // ---------------------------------------------------------------------------
@@ -113,6 +114,8 @@ describe('hashCode', () => {
     const h = hashCode('#FF0000');
     assert.ok(typeof h === 'number');
     assert.equal(hashCode('#FF0000'), h);
+    // Pin the actual integer so any accidental algorithm change is caught.
+    assert.equal(h, -1226944861);
   });
 });
 
@@ -234,6 +237,15 @@ describe('hue2rgb', () => {
   test('t in [1/6, 1/2) returns q', () => {
     // The [1/6, 1/2) branch returns q directly
     assert.equal(hue2rgb(0, 0.8, 0.3), 0.8);
+  });
+
+  test('t in [1/2, 2/3) uses gradient formula', () => {
+    // Branch: p + (q - p) * (2/3 - t) * 6
+    const p = 0.2, q = 0.8, t = 0.6;
+    const expected = p + (q - p) * (2 / 3 - t) * 6;
+    assert.equal(round(hue2rgb(p, q, t), 6), round(expected, 6));
+    // Also verify it's strictly between p and q
+    assert.ok(hue2rgb(p, q, t) > p && hue2rgb(p, q, t) < q);
   });
 
   test('t >= 2/3 returns p', () => {
@@ -679,6 +691,17 @@ describe('generateHarmony', () => {
       assert.equal(palette.length, 5);
     }
   });
+
+  test('hue-wrap: color near hue=1.0 still produces valid hex entries', () => {
+    // rgb(255,0,10) has hue very close to 1.0 (≈ 359°/360 ≈ 0.997)
+    // Adding a positive offset of 0.08 would overflow past 1.0 and must wrap correctly.
+    const nearMax = { r: 255, g: 0, b: 10 };
+    const palette = generateHarmony(nearMax);
+    assert.equal(palette.length, 5);
+    for (const entry of palette) {
+      assert.match(entry.hex, /^#[0-9A-Fa-f]{6}$/, `Expected valid hex, got: ${entry.hex}`);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -692,6 +715,10 @@ describe('applyCohesiveTint', () => {
 
   test('returns baseHex unchanged when intensity is falsy (null)', () => {
     assert.equal(applyCohesiveTint('#FF0000', '#0000FF', null), '#FF0000');
+  });
+
+  test('returns baseHex unchanged when intensity is negative', () => {
+    assert.equal(applyCohesiveTint('#FF0000', '#0000FF', -10), '#FF0000');
   });
 
   test('returns a color-mix() string for intensity > 0', () => {
@@ -716,6 +743,131 @@ describe('applyCohesiveTint', () => {
   test('intensity of 100 produces 100%/0% split', () => {
     const result = applyCohesiveTint('#AABBCC', '#112233', 100);
     assert.ok(result.includes('100%') && result.includes('0%'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeClosestFocus
+// ---------------------------------------------------------------------------
+
+describe('computeClosestFocus', () => {
+  test('returns an object with hex, rgb, and delta properties', () => {
+    const fg = { r: 50, g: 50, b: 50 };   // dark grey foreground
+    const bg = { r: 255, g: 255, b: 255 }; // white background
+    const result = computeClosestFocus(fg, bg);
+    assert.ok(result !== null, 'Expected a focus color to be found');
+    assert.ok(typeof result.hex === 'string', 'hex should be a string');
+    assert.ok(result.hex.startsWith('#'), 'hex should start with #');
+    assert.ok(typeof result.delta === 'number', 'delta should be a number');
+    assert.ok('r' in result.rgb && 'g' in result.rgb && 'b' in result.rgb, 'rgb should have r, g, b');
+  });
+
+  test('result has ≥ 3:1 contrast with foreground', () => {
+    const fg = { r: 50, g: 50, b: 50 };
+    const bg = { r: 255, g: 255, b: 255 };
+    const result = computeClosestFocus(fg, bg);
+    assert.ok(result !== null);
+    const ratio = wcagContrast(result.rgb, fg);
+    assert.ok(ratio >= 3.0, `Focus color must have ≥ 3:1 contrast with FG; got ${ratio}`);
+  });
+
+  test('works for a dark-on-light pair (navy text on white)', () => {
+    const fg = { r: 0,   g: 0,   b: 128 }; // navy
+    const bg = { r: 255, g: 255, b: 255 }; // white
+    const result = computeClosestFocus(fg, bg);
+    assert.ok(result !== null, 'Expected a focus color');
+    const ratio = wcagContrast(result.rgb, fg);
+    assert.ok(ratio >= 3.0, `Focus ≥ 3:1 vs FG; got ${ratio}`);
+  });
+
+  test('works for a light-on-dark pair (white text on black)', () => {
+    const fg = { r: 255, g: 255, b: 255 }; // white
+    const bg = { r: 0,   g: 0,   b: 0   }; // black
+    const result = computeClosestFocus(fg, bg);
+    assert.ok(result !== null, 'Expected a focus color');
+    const ratio = wcagContrast(result.rgb, fg);
+    assert.ok(ratio >= 3.0, `Focus ≥ 3:1 vs FG; got ${ratio}`);
+  });
+
+  test('returns the closest-in-lightness candidate (delta minimized)', () => {
+    const fg = { r: 100, g: 149, b: 237 }; // cornflower blue
+    const bg = { r: 255, g: 255, b: 255 };
+    const result = computeClosestFocus(fg, bg);
+    assert.ok(result !== null);
+    // delta should be a non-negative number
+    assert.ok(result.delta >= 0, `delta should be non-negative, got ${result.delta}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// srgbChannelToLinear – additional boundary test
+// ---------------------------------------------------------------------------
+
+describe('srgbChannelToLinear – boundary', () => {
+  // The sRGB linearization threshold is 0.04045 (from the IEC 61966-2-1 / WCAG spec).
+  // For 8-bit channels: c=10 → cs=10/255≈0.0392 ≤ 0.04045 → linear branch;
+  //                     c=11 → cs=11/255≈0.0431 > 0.04045 → gamma branch.
+  test('c=10 (cs≈0.0392 ≤ 0.04045) uses linear branch', () => {
+    const c = 10;
+    const expected = (c / 255) / 12.92;
+    assert.equal(round(srgbChannelToLinear(c), 8), round(expected, 8));
+  });
+
+  test('c=11 (cs≈0.0431 > 0.04045) uses gamma branch', () => {
+    const c = 11;
+    const cs = c / 255;
+    const expected = Math.pow((cs + 0.055) / 1.055, 2.4);
+    assert.equal(round(srgbChannelToLinear(c), 8), round(expected, 8));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// relativeLuminance – known intermediate value
+// ---------------------------------------------------------------------------
+
+describe('relativeLuminance – known values', () => {
+  // WCAG 2.x relative luminance = 0.2126R + 0.7152G + 0.0722B (IEC 61966-2-1).
+  // For a fully-saturated primary, the result equals that primary's coefficient exactly.
+  test('pure green rgb(0,255,0) has a known luminance ≈ 0.7152', () => {
+    // Green coefficient in the WCAG luminance formula is 0.7152.
+    const lum = relativeLuminance({ r: 0, g: 255, b: 0 });
+    assert.equal(round(lum, 4), 0.7152);
+  });
+
+  test('pure red rgb(255,0,0) has a known luminance ≈ 0.2126', () => {
+    // Red coefficient in the WCAG luminance formula is 0.2126.
+    const lum = relativeLuminance({ r: 255, g: 0, b: 0 });
+    assert.equal(round(lum, 4), 0.2126);
+  });
+
+  test('pure blue rgb(0,0,255) has a known luminance ≈ 0.0722', () => {
+    // Blue coefficient in the WCAG luminance formula is 0.0722.
+    const lum = relativeLuminance({ r: 0, g: 0, b: 255 });
+    assert.equal(round(lum, 4), 0.0722);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// wcagContrast – exact boundary values
+// ---------------------------------------------------------------------------
+
+describe('wcagContrast – threshold boundaries', () => {
+  // The WCAG 3:1 threshold applies to large text (≥18pt or 14pt bold) and UI components.
+  // rgb(148,148,148) on white gives ≈3.03:1 (just above 3:1).
+  // rgb(149,149,149) on white gives ≈2.995:1 (just below 3:1).
+  test('rgb(148,148,148) on white: just above 3:1 large-text/UI threshold', () => {
+    const ratio = wcagContrast({ r: 148, g: 148, b: 148 }, { r: 255, g: 255, b: 255 });
+    assert.ok(ratio >= 3.0, `Expected ≥ 3:1, got ${ratio}`);
+  });
+
+  test('rgb(149,149,149) on white: just below 3:1 threshold', () => {
+    const ratio = wcagContrast({ r: 149, g: 149, b: 149 }, { r: 255, g: 255, b: 255 });
+    assert.ok(ratio < 3.0, `Expected < 3:1, got ${ratio}`);
+  });
+
+  test('light grey on white: contrast well below 3:1', () => {
+    const ratio = wcagContrast({ r: 180, g: 180, b: 180 }, { r: 255, g: 255, b: 255 });
+    assert.ok(ratio < 3.0, `Expected < 3:1 for light grey on white, got ${ratio}`);
   });
 });
 

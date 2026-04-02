@@ -290,3 +290,46 @@ export function applyCohesiveTint(baseHex, tintHex, intensity) {
   const basePct = 100 - tintPct;
   return `color-mix(in oklch, ${tintHex} ${tintPct}%, ${baseHex} ${basePct}%)`;
 }
+
+/**
+ * Compute a nearby focus color meeting 3:1 contrast with foreground and
+ * reasonable contrast with background.
+ * Matches computeClosestFocus() inside setupContrastTool() in app.js.
+ *
+ * NOTE: This is an intentional copy of the app.js closure to make the pure
+ * logic independently testable without a browser DOM. Keep in sync with
+ * the corresponding function in app.js (annotated with its line range).
+ */
+export function computeClosestFocus(fgRgb, bgRgb) {
+  const fgHsl = rgbToHsl(fgRgb);
+  const bgHsl = rgbToHsl(bgRgb);
+  const baseCandidates = [{ h: fgHsl.h, s: fgHsl.s }, { h: bgHsl.h, s: bgHsl.s }];
+  const results = [];
+
+  for (const base of baseCandidates) {
+    for (let d = 0; d <= 100; d += 2) {
+      const l = clamp(fgHsl.l + d / 100, 0.02, 0.98);
+      const candRgb = hslToRgb({ h: base.h, s: base.s, l });
+      const ratioToFg = wcagContrast(candRgb, fgRgb);
+      const ratioToBg = wcagContrast(candRgb, bgRgb);
+      if (ratioToFg >= 3.0 && (ratioToBg >= 3.0 || ratioToBg >= 2.5)) {
+        results.push({ hex: rgbToHex(candRgb), rgb: candRgb, delta: Math.abs(l - fgHsl.l) });
+        break;
+      }
+    }
+    for (let d = 2; d <= 100; d += 2) {
+      const l = clamp(fgHsl.l - d / 100, 0.02, 0.98);
+      const candRgb = hslToRgb({ h: base.h, s: base.s, l });
+      const ratioToFg = wcagContrast(candRgb, fgRgb);
+      const ratioToBg = wcagContrast(candRgb, bgRgb);
+      if (ratioToFg >= 3.0 && (ratioToBg >= 3.0 || ratioToBg >= 2.5)) {
+        results.push({ hex: rgbToHex(candRgb), rgb: candRgb, delta: Math.abs(l - fgHsl.l) });
+        break;
+      }
+    }
+  }
+
+  if (!results.length) return null;
+  results.sort((a, b) => a.delta - b.delta);
+  return results[0];
+}
