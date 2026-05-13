@@ -11,7 +11,6 @@ Repository: https://github.com/mgifford/contrast-plus
 
 ---
 
-
 ## What it does
 
 - Accepts **foreground**, **background**, and an optional **focus/hover (third) color**
