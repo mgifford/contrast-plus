@@ -71,8 +71,8 @@ The report also distinguishes between:
 
 A complete report:
 
-- describes WCAG 2.2 contrast ratios as the current compliance metric in common policy use for this project
-- describes APCA as a perceptual readability metric and supplemental guidance unless policy says otherwise
+- describes WCAG 2.2 contrast ratios as the reference compliance metric
+- describes APCA as a perceptual readability metric and supplemental guidance
 - avoids pass/fail certification language that overstates what the tool can prove
 - keeps assumptions, thresholds, and limitations explicit
 
