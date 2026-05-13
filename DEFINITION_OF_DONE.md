@@ -2,6 +2,8 @@
 
 This document outlines when a report related to contrast-plus should be considered complete.
 
+Examples include accessibility audit reports, feature analysis reports, testing summaries, content reviews, and issue investigation write-ups.
+
 The report is done only when all of the following are true:
 
 ## 1. Purpose and scope are clear
@@ -13,7 +15,8 @@ The report is done only when all of the following are true:
 ## 2. The report is accurate and evidence-based
 
 - Claims are supported by direct observation, repository evidence, test results, or cited references.
-- Reported metrics, calculations, screenshots, or examples match the current state of the project.
+- Reported metrics, calculations, screenshots, or examples match the current state of the project at the time the report was produced.
+- The report references the relevant date, commit, pull request, issue, or release when that context matters.
 - Assumptions are stated plainly.
 
 ## 3. The report reflects project values
