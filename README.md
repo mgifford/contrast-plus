@@ -138,6 +138,11 @@ This section documents which AI tools have been used in this project, what they 
 - **What it was used for**: Code generation, documentation writing, refactoring, creating and updating `AGENTS.md`, and implementing feature changes via pull requests. Commit history includes commits authored by `Copilot@users.noreply.github.com`.
 - **Scope**: Development tooling only. Not used at runtime.
 
+#### GitHub Copilot Task Agent
+- **What it is**: GitHub Copilot Task Agent used in the repository task environment for scoped development work.
+- **What it was used for**: Drafting `DEFINITION_OF_DONE.md` and updating related project documentation.
+- **Scope**: Development tooling only. Not used at runtime.
+
 #### GitHub Accessibility Scanner (AI-powered CI tool)
 - **What it is**: GitHub's AI-powered [`github/accessibility-scanner`](https://github.com/github/accessibility-scanner) action, used in the monthly CI workflow.
 - **What it was used for**: Automated accessibility scanning of the live GitHub Pages site to file actionable issues for violations.
@@ -156,4 +161,3 @@ The application is pure client-side JavaScript. All contrast calculations (WCAG 
 The application does not use the Web AI API, the Web Neural Network API (`navigator.ml`), WebGPU for inference, or any embedded AI model. No AI features built into the browser are intentionally activated by this application.
 
 ---
-
