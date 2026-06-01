@@ -17,7 +17,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   a11y-scan:
@@ -32,7 +34,7 @@ jobs:
             https://mgifford.github.io/contrast-plus/
             https://mgifford.github.io/contrast-plus/test-apca.html
           repository: ${{ github.repository }}
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GH_TOKEN || github.token }}
           cache_key: contrast-plus
           skip_copilot_assignment: false
           include_screenshots: true
