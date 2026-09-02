@@ -142,13 +142,13 @@ function setupContrastTool() {
       const bgParam = params.get('bg');
       const thirdParam = params.get('third');
       if (fgParam) {
-        try { const p = parseCssColor(fgParam); fgText.value = fgText.value || p.hex; fgPicker.value = p.hex; } catch {}
+        try { const p = parseCssColor(fgParam); fgText.value = p.hex || fgText.value; fgPicker.value = p.hex; } catch {}
       }
       if (bgParam) {
-        try { const p = parseCssColor(bgParam); bgText.value = bgText.value || p.hex; bgPicker.value = p.hex; } catch {}
+        try { const p = parseCssColor(bgParam); bgText.value = p.hex || bgText.value; bgPicker.value = p.hex; } catch {}
       }
       if (thirdParam) {
-        try { const p = parseCssColor(thirdParam); thirdText.value = thirdText.value || p.hex; thirdPicker.value = p.hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); } catch {}
+        try { const p = parseCssColor(thirdParam); thirdText.value = p.hex || thirdText.value; thirdPicker.value = p.hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); } catch {}
       }
     } catch (e) {
       // ignore
