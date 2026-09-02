@@ -143,6 +143,11 @@ This section documents which AI tools have been used in this project, what they 
 - **What it was used for**: Drafting `DEFINITION_OF_DONE.md` and updating related project documentation.
 - **Scope**: Development tooling only. Not used at runtime.
 
+#### OpenAI Codex (GPT-5)
+- **What it is**: OpenAI Codex, powered by GPT-5.
+- **What it was used for**: Reviewing URL color initialization, simplifying URL value precedence, and adding a regression test.
+- **Scope**: Development tooling only. Not used at runtime.
+
 #### GitHub Accessibility Scanner (AI-powered CI tool)
 - **What it is**: GitHub's AI-powered [`github/accessibility-scanner`](https://github.com/github/accessibility-scanner) action, used in the monthly CI workflow.
 - **What it was used for**: Automated accessibility scanning of the live GitHub Pages site to file actionable issues for violations.

@@ -1,6 +1,8 @@
 // app.js
 // Client-side APCA + WCAG 2.x contrast checker with suggestion support.
 
+import { applyColorsFromURL } from './url-colors.js';
+
 let APCAcontrast = null;
 let APCA_sRGBtoY = null;
 
@@ -136,23 +138,18 @@ function setupContrastTool() {
 
   // Read colors from URL params on load (e.g., ?fg=%23B53636&bg=%234e4c18&third=%23663399)
   function readColorsFromURL() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const fgParam = params.get('fg');
-      const bgParam = params.get('bg');
-      const thirdParam = params.get('third');
-      if (fgParam) {
-        try { const p = parseCssColor(fgParam); fgText.value = p.hex || fgText.value; fgPicker.value = p.hex; } catch {}
-      }
-      if (bgParam) {
-        try { const p = parseCssColor(bgParam); bgText.value = p.hex || bgText.value; bgPicker.value = p.hex; } catch {}
-      }
-      if (thirdParam) {
-        try { const p = parseCssColor(thirdParam); thirdText.value = p.hex || thirdText.value; thirdPicker.value = p.hex; enableThird.checked = true; thirdContainer.classList.remove('hidden'); } catch {}
-      }
-    } catch (e) {
-      // ignore
-    }
+    applyColorsFromURL({
+      search: window.location.search,
+      parseColor: parseCssColor,
+      fgText,
+      fgPicker,
+      bgText,
+      bgPicker,
+      thirdText,
+      thirdPicker,
+      enableThird,
+      thirdContainer,
+    });
   }
 
   function updateURLWithColors(fgHex, bgHex, thirdHex) {
