@@ -16,6 +16,6 @@
   },
   "devDependencies": {
     "cspell": "^9.7.0",
-    "html-validate": "^10.11.2"
+    "html-validate": "^11.21.1"
   }
 }
